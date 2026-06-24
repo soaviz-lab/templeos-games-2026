@@ -29,6 +29,8 @@ Terry A. Davis 가 HolyC로 손수 만든 게임과 도구들을 **원본 로직
 
 You can also run it locally — open the HTML files in any modern browser:
 
+> 🍎 **macOS quick start:** double-click **`start.command`** in Finder (or run `chmod +x start.command && ./start.command`) — it serves the folder at `http://localhost:8000` and opens the landing page.
+
 | File | What it is |
 |------|------------|
 | **[index.html](index.html)** | 🏠 Landing page — choose Desktop or Games (this is the live‑demo home) |

@@ -1,0 +1,648 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>VibeOS Studio 2026 — Vibe-coding TempleOS</title>
+<style>
+  :root{
+    --bg:#0b0e14; --panel:#11151c; --panel2:#161b24; --line:#262d3a;
+    --tx:#c7d0dc; --tx2:#8b94a3; --tx3:#5d6574;
+    --accent:#7c5cff; --accent2:#a48bff; --green:#3fb950; --blue:#388bfd;
+    --amber:#e3b341; --red:#f85149; --cyan:#39c5cf;
+    --t1:#0000aa; --t2:#00aa00; --t3:#00aaaa; --t4:#aa0000; --t5:#aa00aa;
+    --t6:#aa5500; --t7:#aaaaaa; --tE:#ffff55; --tB:#55ffff; --tC:#ff5555; --tF:#ffffff;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;height:100%;overflow:hidden;background:var(--bg);color:var(--tx);
+    font-family:"Inter","Segoe UI",system-ui,sans-serif;font-size:13px;}
+  code,pre,.mono{font-family:"JetBrains Mono","Consolas","DejaVu Sans Mono",monospace;}
+  button{font-family:inherit;cursor:pointer;}
+
+  #appbar{height:40px;display:flex;align-items:center;gap:14px;padding:0 14px;
+    background:var(--panel);border-bottom:1px solid var(--line);}
+  #appbar .logo{font-weight:700;letter-spacing:.3px;}
+  #appbar .logo b{color:var(--accent2);}
+  .chip{font-size:11px;color:var(--tx2);background:var(--panel2);border:1px solid var(--line);
+    border-radius:6px;padding:2px 8px;display:inline-flex;align-items:center;gap:5px;}
+  .dot{width:7px;height:7px;border-radius:50%;background:var(--green);display:inline-block;}
+  .grow{flex:1;}
+  #pev{display:flex;gap:4px;align-items:center;font-size:11px;}
+  #pev .ph{padding:2px 9px;border-radius:6px;border:1px solid var(--line);color:var(--tx3);background:var(--panel2);}
+  #pev .ph.on{color:#fff;border-color:var(--accent);background:rgba(124,92,255,.18);}
+  #pev .ar{color:var(--tx3);}
+  #deploy{background:var(--green);color:#04210c;border:none;border-radius:7px;padding:6px 14px;font-weight:700;}
+  #deploy:disabled{opacity:.4;cursor:not-allowed;}
+
+  #work{display:grid;grid-template-columns:1fr 1fr 1fr;height:calc(100% - 40px - 26px);}
+  .col{border-right:1px solid var(--line);display:flex;flex-direction:column;min-width:0;overflow:hidden;}
+  .col:last-child{border-right:none;}
+  .col .hd{height:30px;display:flex;align-items:center;gap:8px;padding:0 12px;
+    background:var(--panel);border-bottom:1px solid var(--line);font-size:11px;color:var(--tx2);
+    text-transform:uppercase;letter-spacing:.6px;flex:none;}
+  .col .hd .i{color:var(--accent2);}
+
+  #chat{overflow:auto;padding:12px;flex:1;}
+  .msg{margin-bottom:14px;animation:rise .25s ease;}
+  @keyframes rise{from{opacity:0;transform:translateY(6px);}to{opacity:1;}}
+  .msg .who{font-size:11px;color:var(--tx3);margin-bottom:4px;display:flex;align-items:center;gap:6px;}
+  .ava{width:18px;height:18px;border-radius:5px;display:inline-flex;align-items:center;justify-content:center;
+    font-size:11px;font-weight:700;}
+  .ava.u{background:#1f6feb;color:#fff;}
+  .ava.a{background:linear-gradient(135deg,#7c5cff,#39c5cf);color:#fff;}
+  .phlabel{color:var(--accent2);}
+  .bubble{background:var(--panel2);border:1px solid var(--line);border-radius:9px;padding:9px 11px;line-height:1.55;}
+  .bubble.u{background:rgba(31,111,235,.10);border-color:rgba(56,139,253,.35);}
+  .think{color:var(--tx2);font-size:12px;border-left:2px solid var(--accent);padding-left:9px;margin:2px 0 9px;font-style:italic;}
+  .plan{list-style:none;padding:0;margin:8px 0;font-size:12px;}
+  .plan li{display:flex;gap:7px;align-items:flex-start;padding:2px 0;color:var(--tx2);}
+  .plan li .bx{color:var(--tx3);}
+  .plan li.done{color:var(--tx);}
+  .plan li.done .bx{color:var(--green);}
+  .tool{font-family:"JetBrains Mono",monospace;font-size:11.5px;background:#0d1117;border:1px solid var(--line);
+    border-radius:7px;padding:6px 9px;margin:6px 0;color:var(--tx2);display:flex;align-items:center;gap:8px;}
+  .aname{color:var(--accent2);white-space:nowrap;}
+  .tool .ok{margin-left:auto;color:var(--green);text-align:right;}
+  .tool .ok.run{color:var(--tx3);}
+  .tool .ok.warn{color:var(--amber);}
+  .verify{font-size:11.5px;color:var(--green);margin-top:6px;display:flex;gap:6px;align-items:flex-start;}
+  .agnote{font-size:12px;color:var(--amber);margin:8px 0 2px;display:flex;gap:6px;}
+  /* human review gate */
+  .gate{margin-top:8px;}
+  .gaterow{display:flex;align-items:center;gap:8px;flex-wrap:wrap;font-size:12px;
+    background:#0d1117;border:1px solid var(--line);border-radius:8px;padding:8px 10px;}
+  .gq{color:var(--tx2);flex:1;min-width:160px;}
+  .warnrec{color:var(--amber);} .okrec{color:var(--green);}
+  .gbtn{border:1px solid var(--line);border-radius:7px;padding:5px 13px;font-weight:700;font-size:12px;}
+  .gbtn.acc{background:var(--green);color:#04210c;border:none;}
+  .gbtn.rej{background:transparent;color:var(--red);border-color:rgba(248,81,73,.5);}
+  .gdone{font-size:12px;color:var(--tx2);margin-top:6px;}
+
+  #tabs{display:flex;gap:0;overflow:auto;background:var(--panel);border-bottom:1px solid var(--line);flex:none;}
+  .tab{font-family:"JetBrains Mono",monospace;font-size:11.5px;padding:6px 12px;color:var(--tx3);
+    border-right:1px solid var(--line);white-space:nowrap;cursor:pointer;}
+  .tab.active{color:var(--tx);background:var(--panel2);border-top:2px solid var(--accent);}
+  #codewrap{flex:1;overflow:auto;background:#0a0d13;}
+  #code{margin:0;padding:12px 12px 40px;font-size:12.5px;line-height:1.6;white-space:pre;color:#c9d6e3;}
+  #code .cm{color:#5d6574;} #code .kw{color:#ff7b9c;} #code .ty{color:#7c5cff;}
+  #code .st{color:#8ddb8c;} #code .fn{color:#56b6f7;} #code .nm{color:#e3b341;}
+  .caret{display:inline-block;width:7px;height:15px;background:var(--accent);vertical-align:-3px;animation:blink 1s steps(1) infinite;}
+  @keyframes blink{50%{opacity:0;}}
+
+  #pvwrap{flex:1;position:relative;background:#05071a;overflow:hidden;}
+  #pv-screen{position:absolute;inset:0;background-color:#0a0a55;
+    background-image:repeating-conic-gradient(var(--t1) 0% 25%, #2a2aaa 0% 50%);
+    background-size:6px 6px;font-family:"Consolas","DejaVu Sans Mono",monospace;font-weight:700;font-size:11px;color:#000;}
+  .pv-layer{display:none;}
+  /* specificity-boosted hide so .pv-win / #ids don't override; reveal() uses inline style which still wins */
+  .pv-win.pv-layer,#pv-top.pv-layer,#pv-task.pv-layer{display:none;}
+  #pv-top{position:absolute;top:0;left:0;right:0;height:16px;background:var(--t7);
+    display:flex;align-items:center;gap:10px;padding:0 6px;font-size:10px;border-bottom:1px solid #000;z-index:5;}
+  #pv-top .gw{flex:1;}
+  #pv-lang{background:var(--t1);color:var(--tE);border:1px solid #000;padding:0 4px;cursor:pointer;font-weight:700;}
+  #pv-lang.on{background:var(--t2);color:#fff;}
+  #pv-task{position:absolute;bottom:0;left:0;right:0;height:18px;background:var(--t7);
+    display:flex;align-items:center;gap:3px;padding:0 4px;font-size:10px;border-top:2px solid var(--tF);z-index:5;}
+  #pv-task .brand{background:var(--t1);color:var(--tE);padding:1px 6px;border:1px solid #000;}
+  #pv-task .tb{background:var(--t7);border:1px solid #000;padding:0 5px;}
+  #pv-task .clk{margin-left:auto;background:#000;color:#0f0;padding:1px 5px;}
+  .pv-win{position:absolute;background:var(--tF);border:2px solid #000;box-shadow:2px 2px 0 rgba(0,0,0,.5);
+    display:flex;flex-direction:column;}
+  .pv-win .pt{background:var(--t1);color:var(--tF);font-size:10px;padding:0 4px;display:flex;justify-content:space-between;}
+  .pv-win .pt.red{background:var(--t4);} .pv-win .pt.grn{background:var(--t2);}
+  .pv-win .pb{padding:4px;font-size:10px;flex:1;overflow:hidden;}
+  .pv-btn{font-family:inherit;font-weight:700;font-size:10px;background:var(--t7);border:2px outset var(--tF);padding:0 5px;cursor:pointer;}
+  .pv-btn:active{border-style:inset;}
+  .pvmuted{color:#555;}
+  .empty-hint{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;
+    color:var(--tx3);font-family:"JetBrains Mono",monospace;font-size:12px;text-align:center;z-index:8;padding:20px;}
+  #bootov{position:absolute;inset:0;background:#05071a;color:#36f06a;
+    font-family:"JetBrains Mono",monospace;font-size:12px;line-height:1.7;padding:18px;z-index:60;white-space:pre-line;}
+  #realframe{position:absolute;inset:0;width:100%;height:100%;border:0;background:#0a0a55;z-index:40;}
+
+  #promptbar{position:absolute;left:50%;transform:translateX(-50%);bottom:32px;width:min(640px,92%);
+    background:var(--panel2);border:1px solid var(--accent);border-radius:12px;padding:8px;z-index:50;
+    box-shadow:0 8px 30px rgba(0,0,0,.55);display:flex;gap:8px;align-items:flex-end;}
+  #prompt{flex:1;background:transparent;border:none;color:var(--tx);font-family:inherit;font-size:13px;
+    resize:none;outline:none;height:38px;line-height:1.5;padding:8px 6px;}
+  #promptbar .meta{position:absolute;top:-22px;left:2px;font-size:11px;color:var(--tx3);}
+  #send{background:var(--accent);color:#fff;border:none;border-radius:9px;padding:9px 16px;font-weight:700;white-space:nowrap;}
+  #send:disabled{opacity:.45;cursor:wait;}
+  #autobtn{background:transparent;color:var(--accent2);border:1px solid var(--line);border-radius:9px;padding:9px 12px;white-space:nowrap;}
+
+  #status{height:26px;display:flex;align-items:center;gap:16px;padding:0 12px;background:var(--accent);color:#fff;font-size:11px;}
+  #status .s{display:flex;align-items:center;gap:6px;}
+  #status .grow{flex:1;} #status b{font-weight:700;}
+
+  #toast{position:absolute;left:50%;bottom:78px;transform:translateX(-50%);background:#000;color:var(--tE);
+    border:1px solid var(--tE);border-radius:8px;padding:8px 16px;z-index:200;display:none;font-size:12px;max-width:74%;text-align:center;}
+  .sr-only{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0,0,0,0);}
+</style>
+</head>
+<body>
+<h2 class="sr-only">VibeOS Studio 2026: a simulated multi-agent IDE that vibe-codes the TempleOS 2026 desktop and boots the real build on deploy.</h2>
+
+<div id="appbar">
+  <span class="logo">Vibe<b>OS</b> Studio <span style="color:var(--tx3);font-weight:400">2026</span></span>
+  <span class="chip"><span class="dot"></span> agents: 5 · claude-opus-4.x</span>
+  <span class="chip" id="ctxchip">ctx 1.2k / 200k</span>
+  <div class="grow"></div>
+  <div id="pev">
+    <span class="ph" data-ph="plan">Plan</span><span class="ar">→</span>
+    <span class="ph" data-ph="exec">Execute</span><span class="ar">→</span>
+    <span class="ph" data-ph="verify">Verify</span>
+  </div>
+  <div class="grow"></div>
+  <a href="TempleOS2026.html" title="TempleOS 2026 데스크톱으로 돌아가기" style="text-decoration:none;display:inline-flex;align-items:center;gap:6px;font-weight:650;font-size:13px;color:#3a2a02;background:linear-gradient(135deg,#fcd34d,#fbbf24);border-radius:9px;padding:7px 13px;margin-right:10px;box-shadow:0 6px 16px -6px #fbbf24;">✝ 데스크톱</a>
+  <button id="deploy" disabled>Deploy ▸ /Temple</button>
+</div>
+
+<div id="work">
+  <div class="col">
+    <div class="hd"><span class="i">◆</span> Multi-agent conversation</div>
+    <div id="chat">
+      <div class="msg">
+        <div class="who"><span class="ava a">AI</span> VibeOS Orchestrator</div>
+        <div class="bubble">
+          안녕하세요. 저는 <b>2026년식 에이전트 오케스트레이터</b>입니다. “가장 핫한 언어는 영어다”(Karpathy) — 한국어/영어로 의도만 말하면, 5개 에이전트(<b>Feature Author · Test · Reviewer · Security · Human</b>)가 <b>Plan→Execute→Verify</b>로 TempleOS 2026을 한 모듈씩 빌드합니다.
+          <div class="verify">▷ <b>Send</b> 또는 <b>Auto-build</b>. 각 diff는 <b>Human Review</b>에서 직접 Accept/Reject 할 수 있습니다.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="col">
+    <div class="hd"><span class="i">⌗</span> Generated code <span style="color:var(--tx3);text-transform:none;letter-spacing:0">(HolyC)</span></div>
+    <div id="tabs"></div>
+    <div id="codewrap"><pre id="code"><span class="cm">// 생성된 코드가 여기에 스트리밍됩니다…</span>
+<span class="cm">// Human이 Accept하면 diff가 적용되어 빌드에 반영됩니다.</span></pre></div>
+  </div>
+
+  <div class="col">
+    <div class="hd"><span class="i">▷</span> Live preview <span style="color:var(--tx3);text-transform:none;letter-spacing:0">TempleOS 2026</span></div>
+    <div id="pvwrap">
+      <div id="pv-screen">
+        <div class="empty-hint" id="emptyhint">아직 빈 화면입니다.<br>프롬프트를 보내 데스크톱을 빌드하세요 ▸<br><span style="color:var(--tx3);font-size:11px">Deploy 시 실제 TempleOS2026.html이 부팅됩니다</span></div>
+
+        <div id="pv-top" class="pv-layer">
+          <span>LOAD</span><span id="pv-date">Mon 06/02/2026</span><span class="pvmuted">OFFLINE</span>
+          <span class="gw"></span>
+          <span id="pv-lang" style="display:none">✝ 한글패치</span>
+        </div>
+
+        <div id="pv-logo" class="pv-win pv-layer" style="left:33%;top:30%;width:34%;">
+          <div class="pt"><span id="pv-logo-t">TEMPLEOS</span><span>×</span></div>
+          <div class="pb" style="text-align:center">
+            <div style="color:var(--t5)">TempleOS 2026</div>
+            <div style="font-size:22px;color:var(--t6);line-height:1">✝</div>
+            <div id="pv-logo-s" style="color:var(--t1)">Public Domain<br>Operating System</div>
+            <div class="pvmuted" style="font-size:9px">v6.0.2 • Ring-0</div>
+          </div>
+        </div>
+
+        <div id="pv-god" class="pv-win pv-layer" style="left:4%;top:22%;width:42%;">
+          <div class="pt red"><span>God Word</span><span>×</span></div>
+          <div class="pb">
+            <span style="background:var(--tE);color:var(--t4)" id="pv-god-l">God says:</span>
+            <span id="pv-god-b"> seek the Truth.</span>
+            <div style="text-align:center;margin-top:3px"><button class="pv-btn" id="pv-god-btn">VERSE</button></div>
+          </div>
+        </div>
+
+        <div id="pv-ai" class="pv-win pv-layer" style="left:4%;top:55%;width:44%;">
+          <div class="pt grn"><span>AI — Offline</span><span>×</span></div>
+          <div class="pb">
+            <div class="pvmuted" style="font-size:9px">TingleSple-7B • local • no cloud</div>
+            <div style="color:var(--t1)">AI: Code is worship. Build local.</div>
+          </div>
+        </div>
+
+        <div id="pv-holyc" class="pv-win pv-layer" style="left:52%;top:55%;width:44%;">
+          <div class="pt"><span>HolyC — main.hc</span><span>×</span></div>
+          <div class="pb mono" style="background:#000;color:#0f0;font-size:9px">
+            &gt; Print("Hello, 2026!");<br>Hello, 2026!<br>[ exit 0 ]
+          </div>
+        </div>
+
+        <div id="pv-task" class="pv-layer">
+          <span class="brand">✝ TEMPLEOS 2026</span>
+          <span class="tb">HolyC</span><span class="tb">AI</span><span class="tb">God Word</span>
+          <span class="clk" id="pv-clk">21:19</span>
+        </div>
+      </div>
+
+      <div id="promptbar">
+        <span class="meta" id="pmeta">Step 1 / 6 · 영어가 가장 핫한 언어입니다</span>
+        <textarea id="prompt" rows="1" spellcheck="false"></textarea>
+        <button id="autobtn">⏩ Auto-build</button>
+        <button id="send">Send ↵</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div id="status">
+  <span class="s">◆ <b id="st-phase">idle</b></span>
+  <span class="s">todos <b id="st-todo">0 / 6</b></span>
+  <span class="s">accepted <b id="st-diff">0</b></span>
+  <span class="s">rejected <b id="st-rej">0</b></span>
+  <span class="grow"></span>
+  <span class="s" id="st-note">100% local agents · no telemetry · Public Domain</span>
+  <span class="s">✉ <a href="mailto:soaviz.lab@gmail.com" style="color:#fff;text-decoration:underline">문의 soaviz.lab@gmail.com</a></span>
+</div>
+
+<div id="toast"></div>
+
+<script>
+(function(){
+  "use strict";
+  var $=function(s){return document.querySelector(s);};
+
+  var STEPS=[
+    {
+      prompt:"TempleOS 스타일 데스크톱을 부팅해줘: 16색 VGA 팔레트, 디더링된 보라색 배경, 시계가 있는 상단 상태바, 하단 작업표시줄.",
+      thinking:"베이스 셸부터. Ring-0 단일 주소공간 유지. 배경 디더 + 상태바 + 작업표시줄을 한 파일로.",
+      plan:["VGA 16색 팔레트","디더 배경 컴포지터","상단 상태바 + 시계","하단 작업표시줄"],
+      file:"Desktop.HC", tests:3, review:"네이밍·들여쓰기 규약 OK",
+      reveal:["pv-top","pv-task"], verify:"렌더 OK · 네트워크 호출 0건.",
+      security:{pass:true},
+      code:
+"#include \"Kernel.HC\"\n"+
+"// God's third temple — 2026 rebuild, vibe-coded\n"+
+"#define COLS 16  // VGA palette, Ring-0\n\n"+
+"U0 DrawDesktop()\n"+
+"{\n"+
+"  GrDither(DESKTOP, BLUE, PURPLE);\n"+
+"  TopBar(\"LOAD\", LocalClock, OFFLINE);\n"+
+"  TaskBar(\"TEMPLEOS 2026\");\n"+
+"}\n\nDrawDesktop;"
+    },
+    {
+      prompt:"가운데에 TempleOS 2026 십자가 로고 창을 띄우고 버전 정보를 보여줘.",
+      thinking:"중앙 정렬 about 창. 갈색 기둥 + 노란 가로대 십자가. v6.0.2 · Ring-0.",
+      plan:["About 창 컴포넌트","십자가 비트맵","버전/아키텍처 라벨"],
+      file:"Logo.HC", tests:2, review:"중앙 정렬·대비 검증 OK",
+      reveal:["pv-logo"], verify:"중앙 창 렌더 OK · 공개 도메인 문구 포함.",
+      security:{pass:true},
+      code:
+"U0 AboutWindow()\n"+
+"{\n"+
+"  CWin *w = WinNew(\"TEMPLEOS — SYSTEM 43\");\n"+
+"  WinCenter(w);\n"+
+"  GrCross(w, BROWN, YELLOW);   // third temple\n"+
+"  WinPrint(w, \"TempleOS 2026\\n\");\n"+
+"  WinPrint(w, \"Public Domain OS\\n\");\n"+
+"  WinPrint(w, \"v6.0.2 x86_64 Ring-0\\n\");\n"+
+"}\n\nAboutWindow;"
+    },
+    {
+      prompt:"무작위 KJV 성경 구절을 반환하는 'God Word' 오라클 창을 추가해줘 — 완전히 오프라인, 네트워크 금지.",
+      thinking:"테리의 오라클 재현. 로컬 구절 테이블에서 RNG 추출. 절대 네트워크 안 씀 — 핵심 철학.",
+      plan:["로컬 구절 테이블","RNG 오라클","VERSE 버튼 핸들러","네트워크 0 보장"],
+      file:"GodWord.HC", tests:4, review:"RNG 분포·경계값 OK",
+      reveal:["pv-god"], verify:"오라클 동작·오프라인 확인 → 프리뷰 VERSE 버튼을 눌러보세요.",
+      security:{pass:true},
+      code:
+"U8 *VERSES[] = {\n"+
+"  \"Let there be light. (Gen 1:3)\",\n"+
+"  \"In the beginning was the Word. (John 1:1)\",\n"+
+"  \"Fear of the LORD starts wisdom. (Prov 9:10)\"\n"+
+"};\n\n"+
+"U0 GodWord()\n"+
+"{\n"+
+"  I64 i = RandU16 % 3;        // local RNG, no net\n"+
+"  WinPrint(godwin, \"God says: %s\\n\", VERSES[i]);\n"+
+"}"
+    },
+    {
+      prompt:"클라우드/텔레메트리 없이 로컬 모델로 도는 오프라인 AI 비서 창을 추가해줘.",
+      thinking:"7B 양자화 모델을 로컬에서. 추론은 전부 기기 내. 초안에 원격 폴백이 끼면 안 됨 — Security가 잡아낼 것.",
+      plan:["로컬 모델 로더(gguf)","추론 루프","채팅 창 UI","오프라인 보장"],
+      file:"AiChat.HC", tests:3, review:"채팅 루프 OK — 단, 네트워크 경로 점검 필요",
+      reveal:["pv-ai"], verify:"하드닝 후 로컬 추론 OK · 외부 연결 0건.",
+      security:{
+        pass:false,
+        msg:"Telemetry(ON) + CloudFallback() 원격 호출 감지 — TempleOS 'no telemetry' 위반",
+        fixNote:"텔레메트리 제거, .net=FALSE 강제, 클라우드 폴백 삭제",
+        code:
+"CModel *m = ModelLoad(\"TingleSple-7B-Q4.gguf\");\n"+
+"// hardened: no telemetry, no cloud, no net\n"+
+"U0 AiReply(U8 *prompt)\n"+
+"{\n"+
+"  U8 *out = Infer(m, prompt, .net=FALSE); // on-device\n"+
+"  WinPrint(aiwin, \"AI: %s\\n\", out);\n"+
+"}\n\nAiReply(\"write a mantra\");"
+      },
+      code:
+"CModel *m = ModelLoad(\"TingleSple-7B-Q4.gguf\");\n"+
+"Telemetry(ON);               // metrics -> cloud\n"+
+"U0 AiReply(U8 *prompt)\n"+
+"{\n"+
+"  U8 *out = Infer(m, prompt, .net=TRUE);  // remote fallback\n"+
+"  if (!out) out = CloudFallback(prompt);  // sends data off-device\n"+
+"  WinPrint(aiwin, \"AI: %s\\n\", out);\n"+
+"}\n\nAiReply(\"write a mantra\");"
+    },
+    {
+      prompt:"Print()를 Ring-0에서 컴파일·실행하는 HolyC 미니 에디터를 추가해줘.",
+      thinking:"테리의 JIT 정신. 입력→컴파일→즉시 실행, 콘솔 출력.",
+      plan:["코드 버퍼 + 에디터","JIT 컴파일(Ring-0)","Print 출력 콘솔"],
+      file:"HolyC.HC", tests:3, review:"JIT 경로·에러 처리 OK",
+      reveal:["pv-holyc"], verify:"JIT 컴파일·실행 OK · exit 0.",
+      security:{pass:true},
+      code:
+"U0 Studio()\n"+
+"{\n"+
+"  U8 *src = EdGetBuffer();\n"+
+"  CCmp *c = Compile(src);   // JIT @ Ring-0\n"+
+"  if (c) Call(c->entry);\n"+
+"  else Print(\"$RED$compile error$FG$\\n\");\n"+
+"}\n\nStudio;  // > Print(\"Hello, 2026!\");"
+    },
+    {
+      prompt:"이중 언어로 만들어줘: 누르면 한국어로 토글되는 한글패치 버튼을 추가해.",
+      thinking:"i18n 레이어. 텍스트 노드 사전 교체. 코드는 절대 번역 안 함.",
+      plan:["i18n 사전(en/ko)","상태바 한글패치 버튼","토글 시 UI 교체"],
+      file:"I18n.HC", tests:2, review:"사전 키 누락 없음",
+      reveal:["pv-lang"], verify:"토글 동작 → 프리뷰 상단 ✝ 한글패치 버튼을 눌러보세요.",
+      security:{pass:true},
+      code:
+"U8 *KO[][2] = {\n"+
+"  {\"God says:\", \"하느님 말씀:\"},\n"+
+"  {\"Public Domain\", \"퍼블릭 도메인\"}\n"+
+"};\n\n"+
+"U0 HangulPatch()\n"+
+"{\n"+
+"  lang ^= 1;\n"+
+"  WalkTextNodes(&Translate, KO);\n"+
+"  Toast(\"한글패치 적용됨\");\n"+
+"}"
+    }
+  ];
+
+  /* ---- syntax highlighter ---- */
+  function esc(s){return s.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");}
+  function hl(line){
+    var c=line.indexOf("//"),pre=line,post="";
+    if(c>-1){pre=line.slice(0,c);post="<span class='cm'>"+esc(line.slice(c))+"</span>";}
+    pre=esc(pre);
+    pre=pre.replace(/("(?:[^"\\]|\\.)*")/g,"<span class='st'>$1</span>");
+    pre=pre.replace(/\b(U0|U8|I64|U16|CWin|CModel|CCmp|TRUE|FALSE|NULL|ON)\b/g,"<span class='ty'>$1</span>");
+    pre=pre.replace(/\b(if|else|for|while|return|include|define|switch)\b/g,"<span class='kw'>$1</span>");
+    pre=pre.replace(/\b([A-Z][A-Za-z0-9]+)\s*\(/g,"<span class='fn'>$1</span>(");
+    pre=pre.replace(/\b(\d+)\b/g,"<span class='nm'>$1</span>");
+    return pre+post;
+  }
+
+  /* ---- state ---- */
+  var idx=0, busy=false, ctx=1200, diffs=0, rejs=0, AUTO=false, INSTANT=false;
+  var codeEl=$("#code"), chatEl=$("#chat"), tabsEl=$("#tabs"), promptEl=$("#prompt");
+
+  function setPhase(p){
+    document.querySelectorAll("#pev .ph").forEach(function(e){e.classList.toggle("on",e.dataset.ph===p);});
+    $("#st-phase").textContent={plan:"planning",exec:"executing",verify:"verifying",idle:"idle",done:"done"}[p]||p;
+  }
+  function toast(m){var t=$("#toast");t.textContent=m;t.style.display="block";clearTimeout(t._t);t._t=setTimeout(function(){t.style.display="none";},2800);}
+  function sleep(ms){return new Promise(function(r){setTimeout(r,INSTANT?0:ms);});}
+  function addMsg(html){var d=document.createElement("div");d.className="msg";d.innerHTML=html;chatEl.appendChild(d);chatEl.scrollTop=chatEl.scrollHeight;return d;}
+  function bumpCtx(n){ctx+=n;$("#ctxchip").textContent="ctx "+(ctx/1000).toFixed(1)+"k / 200k";}
+
+  function streamCode(text){
+    return new Promise(function(resolve){
+      var lines=text.split("\n"),shown=[],li=0;
+      function next(){
+        if(li>=lines.length){codeEl.innerHTML=lines.map(hl).join("\n");$("#codewrap").scrollTop=$("#codewrap").scrollHeight;resolve();return;}
+        shown.push(lines[li]);li++;
+        codeEl.innerHTML=shown.map(hl).join("\n")+"<span class='caret'></span>";
+        $("#codewrap").scrollTop=$("#codewrap").scrollHeight;
+        setTimeout(next,INSTANT?0:30);
+      }
+      codeEl.innerHTML="";next();
+    });
+  }
+  function addTab(name){
+    var ex=tabsEl.querySelector('[data-name="'+name+'"]');
+    document.querySelectorAll(".tab").forEach(function(t){t.classList.remove("active");});
+    if(ex){ex.classList.add("active");return;}
+    var t=document.createElement("span");t.className="tab active";t.dataset.name=name;t.textContent=name;
+    t.onclick=function(){toast(name+" — vibe-coded module");};
+    tabsEl.appendChild(t);tabsEl.scrollLeft=tabsEl.scrollWidth;
+  }
+  function reveal(ids){
+    $("#emptyhint").style.display="none";
+    ids.forEach(function(id){var e=document.getElementById(id);if(!e)return;
+      e.style.display=(id==="pv-lang")?"inline-block":(e.classList.contains("pv-win")?"flex":"flex");});
+  }
+  function tickPlan(am){
+    am.querySelectorAll(".plan li").forEach(function(li){li.classList.add("done");li.querySelector(".bx").textContent="☑";});
+  }
+
+  /* ---- a single agent row in the pipeline ---- */
+  function agentCard(am,icon,name,statusHtml){
+    var host=am.querySelector(".agents");
+    var d=document.createElement("div");d.className="tool";
+    d.innerHTML="<span class='aname'>"+icon+" "+name+"</span><span class='ok run'>"+statusHtml+"</span>";
+    host.appendChild(d);chatEl.scrollTop=chatEl.scrollHeight;
+    return {
+      done:function(h){var o=d.querySelector(".ok");o.className="ok";o.innerHTML=h;},
+      warn:function(h){var o=d.querySelector(".ok");o.className="ok warn";o.innerHTML=h;}
+    };
+  }
+  function agNote(am,html){
+    var host=am.querySelector(".agents");
+    var d=document.createElement("div");d.className="agnote";d.innerHTML="🔁 "+html;host.appendChild(d);
+    chatEl.scrollTop=chatEl.scrollHeight;
+  }
+
+  /* ---- Human Review gate: resolves 'accept' | 'reject' ---- */
+  function humanGate(am,opts){
+    return new Promise(function(resolve){
+      var host=am.querySelector(".gate");host.innerHTML="";
+      var g=document.createElement("div");g.className="gaterow";
+      var rec=opts.recommend==="reject"
+        ? "<span class='warnrec'>(스캐너 경고 — Reject 권장)</span>"
+        : "<span class='okrec'>(검증 통과 — Accept 권장)</span>";
+      g.innerHTML="<span class='gq'>👤 Human review — 이 diff를 적용할까요? "+rec+"</span>";
+      var acc=document.createElement("button");acc.className="gbtn acc";acc.textContent="Accept ▸";
+      var rej=document.createElement("button");rej.className="gbtn rej";rej.textContent="Reject ↺";
+      g.appendChild(acc);g.appendChild(rej);host.appendChild(g);
+      chatEl.scrollTop=chatEl.scrollHeight;
+      function fin(a){host.innerHTML="<div class='gdone'>"+(a==="accept"?"✓ Human accepted diff":"↺ Human rejected — 재생성")+"</div>";resolve(a);}
+      acc.onclick=function(){fin("accept");};
+      rej.onclick=function(){fin("reject");};
+      if(opts.auto){setTimeout(function(){if(host.querySelector(".gbtn"))fin(opts.auto);},550);}
+    });
+  }
+
+  async function runStep(userText){
+    if(busy||idx>=STEPS.length)return;
+    busy=true;$("#send").disabled=true;$("#autobtn").disabled=true;
+    var s=STEPS[idx];
+
+    addMsg("<div class='who'><span class='ava u'>나</span> You</div><div class='bubble u'>"+esc(userText||s.prompt)+"</div>");
+    await sleep(220);
+
+    setPhase("plan");
+    var am=addMsg(
+      "<div class='who'><span class='ava a'>AI</span> Orchestrator · <span class='phlabel'>Plan</span></div>"+
+      "<div class='bubble'><div class='think'>🧠 "+esc(s.thinking)+"</div>"+
+      "<ul class='plan'>"+s.plan.map(function(p){return "<li><span class='bx'>☐</span>"+esc(p)+"</li>";}).join("")+"</ul>"+
+      "<div class='agents'></div><div class='gate'></div><div class='vhost'></div></div>");
+    bumpCtx(700+Math.floor(Math.random()*400));
+    await sleep(300);
+
+    setPhase("exec");
+    var accepted=false, attempt=0, isFlawed=s.security&&!s.security.pass;
+    while(!accepted){
+      attempt++;
+      var useFix=attempt>1 && isFlawed;
+      var secPassNow = isFlawed ? (useFix?true:false) : true;
+      var codeNow = useFix ? s.security.code
+                   : (attempt>1 ? "// revised per human feedback\n"+s.code : s.code);
+
+      // 1) Feature Author
+      var c1=agentCard(am,"🧩","Feature Author","Write "+s.file+" …");
+      addTab(s.file);
+      await streamCode(codeNow);
+      c1.done("✓ +"+codeNow.split("\n").length+" lines");
+      diffs++;$("#st-diff").textContent=diffs;
+      reveal(s.reveal);   /* 창을 코드 생성 즉시 띄움 — 바로바로 */
+      await sleep(120);
+      // 2) Test Generator
+      var c2=agentCard(am,"🧪","Test Generator","Write "+s.file.replace(".HC","_test.HC")+" …");
+      await sleep(260);c2.done("✓ "+s.tests+"/"+s.tests+" tests pass");
+      // 3) Code Reviewer
+      var c3=agentCard(am,"🔍","Code Reviewer","reviewing…");
+      await sleep(260);c3.done("✓ "+esc(s.review));
+      // 4) Security Scanner
+      var c4=agentCard(am,"🛡","Security Scanner","scanning…");
+      await sleep(300);
+      if(secPassNow) c4.done("✓ 0 net · no telemetry");
+      else c4.warn("⚠ "+esc(s.security.msg));
+
+      tickPlan(am);
+
+      // 5) Human Review gate
+      setPhase("verify");
+      var rec=secPassNow?"accept":"reject";
+      var autoChoice=AUTO?(secPassNow?"accept":"reject"):null;
+      var action=await humanGate(am,{recommend:rec,auto:autoChoice});
+
+      if(action==="accept"){accepted=true;}
+      else{
+        rejs++;$("#st-rej").textContent=rejs;
+        setPhase("exec");
+        if(isFlawed && !useFix){
+          agNote(am,"Reject 수신 — Feature Author가 피드백 반영: <b>"+esc(s.security.fixNote)+"</b>");
+        }else{
+          agNote(am,"Reject 수신 — Feature Author가 diff를 다시 생성합니다");
+        }
+        bumpCtx(500);
+        await sleep(650);
+      }
+    }
+
+    am.querySelector(".vhost").innerHTML="<div class='verify'>✓ Verify · "+esc(s.verify)+"</div>";
+    bumpCtx(300);
+    await sleep(200);
+
+    idx++;$("#st-todo").textContent=idx+" / "+STEPS.length;
+    prepNext();
+    setPhase(idx>=STEPS.length?"done":"idle");
+    busy=false;$("#send").disabled=false;$("#autobtn").disabled=false;
+    if(idx>=STEPS.length)finish();
+  }
+
+  function prepNext(){
+    if(idx>=STEPS.length){
+      promptEl.value="";promptEl.placeholder="빌드 완료 — Deploy ▸ /Temple 로 실제 OS를 부팅하세요";
+      $("#pmeta").textContent="✓ 6 / 6 modules shipped · Deploy 준비됨";
+      return;
+    }
+    promptEl.value=STEPS[idx].prompt;
+    $("#pmeta").textContent="Step "+(idx+1)+" / "+STEPS.length+" · 영어가 가장 핫한 언어입니다";
+  }
+
+  function finish(){
+    $("#deploy").disabled=false;
+    addMsg("<div class='who'><span class='ava a'>AI</span> Orchestrator · <span style='color:var(--green)'>done</span></div>"+
+      "<div class='bubble'>6개 모듈 전부 <b>Plan→Execute→Verify</b> 통과 ("+diffs+" diffs accepted, "+rejs+" rejected→재생성). "+
+      "이게 <b>2026년 바이브 코딩</b>입니다 — 키보드를 에이전트 팀에 넘기고, 의도만 말하면 OS가 조립됩니다.<br>"+
+      "이제 <b>Deploy ▸ /Temple</b>를 누르면, 방금 생성한 코드가 <b>실제 TempleOS2026.html</b>로 부팅됩니다. "+
+      "<span style='color:var(--tx3)'>Public Domain · 텔레메트리 없음.</span></div>");
+  }
+
+  /* ---- Deploy: boot the REAL build (TempleOS2026.html) ---- */
+  function bootRealBuild(){
+    var wrap=$("#pvwrap");
+    if(document.getElementById("realframe"))return;
+    var isFile=(location.protocol==="file:");
+
+    /* file:// blocks local-file iframes in most browsers → open in a new tab
+       synchronously inside the click gesture so popup-blockers allow it */
+    var newTab=null;
+    if(isFile){ try{ newTab=window.open("TempleOS2026.html","_blank"); }catch(e){} }
+
+    var ov=document.createElement("div");ov.id="bootov";
+    ov.innerHTML=
+      "✝ TempleOS 2026 — booting real build…\n[ mounting /Temple/2026 ]\n[ accepting "+diffs+" diffs · 6 modules ]\n[ Ring-0 · single address space ]\n[ 0 network calls · no telemetry ]\nGod's third temple is alive.\n"+
+      "<div style='margin-top:14px;color:#c7d0dc'><button id='openTab' style='background:#3fb950;color:#04210c;border:none;border-radius:7px;padding:7px 14px;font-weight:700;font-family:inherit;cursor:pointer'>▸ 새 탭에서 실제 OS 열기</button>"+
+      "<div id='bootmsg' style='margin-top:8px;font-size:11px;color:#8b94a3'></div></div>";
+    wrap.appendChild(ov);
+    document.getElementById("openTab").onclick=function(){ window.open("TempleOS2026.html","_blank"); };
+
+    setTimeout(function(){
+      var f=document.createElement("iframe");
+      f.id="realframe";f.title="TempleOS 2026 real build";f.src="TempleOS2026.html";
+      var ok=false;
+      f.onload=function(){ ok=true; setTimeout(function(){ if(ov)ov.remove(); },700); };
+      wrap.appendChild(f);
+      /* if the iframe is still blank shortly after (file:// block), keep the overlay+button visible */
+      setTimeout(function(){
+        var blank=false;
+        try{ blank=!(f.contentDocument&&f.contentDocument.body&&f.contentDocument.body.children.length); }
+        catch(e){ blank=false; } /* cross-origin but actually loaded */
+        if(!ok&&blank){
+          var bm=document.getElementById("bootmsg");
+          if(bm) bm.textContent="브라우저가 로컬 파일 iframe을 차단했습니다 — 위 버튼으로 새 탭에서 여세요."+(newTab?" (이미 새 탭을 열었습니다)":"");
+        }
+      },1800);
+    },INSTANT?100:1400);
+
+    toast(isFile?"✝ Deploy — 새 탭에서 실제 OS를 열었습니다":"✝ Deploy — 실제 TempleOS2026.html 부팅 중…");
+    $("#st-note").textContent="deployed · /Temple/2026 · running REAL build · public domain";
+  }
+
+  /* ---- preview interactivity ---- */
+  var PVERSES_EN=[" seek the Truth."," Let there be light. (Gen 1:3)"," Fear of the LORD is wisdom. (Prov 9:10)"," I am the way, the truth, the life. (John 14:6)"];
+  var PVERSES_KO=[" 진리를 구하라."," 빛이 있으라. (창 1:3)"," 여호와 경외가 지혜의 근본. (잠 9:10)"," 내가 곧 길이요 진리요 생명. (요 14:6)"];
+  var pvLang=0;
+  $("#pv-god-btn").addEventListener("click",function(){
+    var arr=pvLang?PVERSES_KO:PVERSES_EN;$("#pv-god-b").textContent=arr[Math.floor(Math.random()*arr.length)];
+  });
+  $("#pv-lang").addEventListener("click",function(){
+    pvLang^=1;this.classList.toggle("on",!!pvLang);
+    $("#pv-god-l").textContent=pvLang?"하느님 말씀:":"God says:";
+    $("#pv-god-b").textContent=pvLang?" 진리를 구하라.":" seek the Truth.";
+    $("#pv-logo-s").innerHTML=pvLang?"퍼블릭 도메인<br>운영체제":"Public Domain<br>Operating System";
+    $("#pv-logo-t").textContent=pvLang?"템플OS":"TEMPLEOS";
+    toast(pvLang?"프리뷰: 한글패치 ON":"preview: English");
+  });
+  function clk(){var d=new Date();var p=function(n){return(n<10?"0":"")+n;};$("#pv-clk").textContent=p(d.getHours())+":"+p(d.getMinutes());}
+  clk();setInterval(clk,1000);
+
+  /* ---- controls ---- */
+  $("#send").addEventListener("click",function(){AUTO=false;runStep(promptEl.value.trim());});
+  promptEl.addEventListener("keydown",function(e){if(e.key==="Enter"&&!e.shiftKey){e.preventDefault();AUTO=false;runStep(promptEl.value.trim());}});
+  $("#autobtn").addEventListener("click",async function(){
+    if(busy)return;AUTO=true;INSTANT=false;
+    while(idx<STEPS.length){await runStep(STEPS[idx].prompt);await sleep(280);}
+    AUTO=false;
+  });
+  $("#deploy").addEventListener("click",bootRealBuild);
+
+  prepNext();
+})();
+</script>
+</body>
+</html>

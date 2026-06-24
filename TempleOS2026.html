@@ -1,0 +1,2130 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>TempleOS 2026 — Public Domain Operating System</title>
+<style>
+  /* ===== TempleOS 16-color VGA palette ===== */
+  :root{
+    --c0:#000000; --c1:#0000aa; --c2:#00aa00; --c3:#00aaaa;
+    --c4:#aa0000; --c5:#aa00aa; --c6:#aa5500; --c7:#aaaaaa;
+    --c8:#555555; --c9:#5555ff; --cA:#55ff55; --cB:#55ffff;
+    --cC:#ff5555; --cD:#ff55ff; --cE:#ffff55; --cF:#ffffff;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;height:100%;overflow:hidden;}
+  body{
+    font-family:"Consolas","DejaVu Sans Mono","Courier New",monospace;
+    font-weight:700;
+    font-size:13px;
+    line-height:1.25;
+    color:var(--c0);
+    background-color:#0a0a55;
+    /* dithered TempleOS-style desktop */
+    background-image:
+      repeating-conic-gradient(var(--c1) 0% 25%, #2222aa 0% 50%);
+    background-size:6px 6px;
+    -webkit-font-smoothing:none;
+    image-rendering:pixelated;
+    user-select:none;
+    cursor:default;
+  }
+
+  /* ===== Top menu bar ===== */
+  #topbar{
+    position:fixed;top:0;left:0;right:0;height:20px;
+    background:var(--c7);color:var(--c0);
+    display:flex;align-items:center;gap:14px;
+    padding:0 8px;font-size:12px;border-bottom:2px solid var(--c8);
+    z-index:9000;white-space:nowrap;overflow:hidden;
+  }
+  #topbar .seg{display:flex;gap:5px;align-items:center;}
+  #topbar .hot{color:var(--c4);}
+  #topbar .grow{flex:1;}
+  #langbtn{
+    background:var(--c1);color:var(--cE);border:1px solid var(--c0);
+    padding:0 6px;cursor:pointer;font-weight:700;
+  }
+  #langbtn:hover{background:var(--c4);color:var(--cF);}
+  #langbtn.on{background:var(--c2);color:var(--cF);}
+
+  /* ===== Windows ===== */
+  .win{
+    position:absolute;
+    background:var(--cF);
+    border:2px solid var(--c0);
+    box-shadow:3px 3px 0 rgba(0,0,0,.5);
+    display:flex;flex-direction:column;
+    min-width:150px;
+  }
+  .win .title{
+    background:var(--c1);color:var(--cF);
+    display:flex;align-items:center;justify-content:space-between;
+    padding:1px 4px;cursor:move;font-size:12px;
+    border-bottom:1px solid var(--c0);
+  }
+  .win .title .url{color:var(--cB);font-weight:700;}
+  .win .title .x{
+    background:var(--c7);color:var(--c0);border:1px solid var(--c0);
+    width:14px;height:14px;line-height:12px;text-align:center;
+    cursor:pointer;font-size:11px;margin-left:6px;
+  }
+  .win .title .x:hover{background:var(--cC);color:var(--cF);}
+  .win .body{padding:6px;overflow:auto;flex:1;}
+  .win .body::-webkit-scrollbar{width:12px;height:12px;}
+  .win .body::-webkit-scrollbar-track{background:var(--c7);}
+  .win .body::-webkit-scrollbar-thumb{background:var(--c1);border:1px solid var(--c0);}
+
+  /* colored title-bar variants */
+  .t-red .title{background:var(--c4);}
+  .t-green .title{background:var(--c2);}
+  .t-mag .title{background:var(--c5);}
+  .t-cyan .title{background:var(--c3);}
+  .t-brown .title{background:var(--c6);}
+
+  /* generic helpers */
+  .hl{color:var(--c4);}
+  .hb{color:var(--c1);}
+  .hg{color:var(--c2);}
+  .hm{color:var(--c5);}
+  .hc{color:var(--c3);}
+  .hy{background:var(--cE);color:var(--c4);padding:0 2px;}
+  .muted{color:var(--c8);}
+  hr.tos{border:none;border-top:1px dashed var(--c8);margin:5px 0;}
+  .center{text-align:center;}
+
+  button.tos,input.tos{
+    font-family:inherit;font-weight:700;font-size:12px;
+    background:var(--c7);color:var(--c0);
+    border:2px outset var(--cF);padding:2px 8px;cursor:pointer;
+  }
+  button.tos:hover{background:var(--cE);}
+  button.tos:active{border-style:inset;}
+  input.tos{background:var(--cF);border:2px inset var(--c7);cursor:text;}
+
+  .pill{border:1px solid var(--c0);padding:0 4px;display:inline-block;margin:1px;background:var(--c7);}
+
+  /* ===== Taskbar ===== */
+  #taskbar{
+    position:fixed;left:0;right:0;bottom:0;height:24px;
+    background:var(--c7);border-top:2px solid var(--cF);
+    display:flex;align-items:center;gap:3px;padding:0 4px;
+    z-index:9000;font-size:12px;
+  }
+  #taskbar .brand{
+    background:var(--c1);color:var(--cE);padding:2px 8px;
+    border:1px solid var(--c0);font-weight:700;
+  }
+  .tbtn{
+    background:var(--c7);border:2px outset var(--cF);
+    padding:1px 7px;cursor:pointer;color:var(--c0);
+  }
+  .tbtn:hover{background:var(--cE);}
+  .tbtn.active{border-style:inset;background:var(--cB);}
+  #taskbar .grow{flex:1;}
+  #clock{background:var(--c0);color:var(--cA);padding:2px 6px;border:1px solid var(--c8);}
+
+  /* logo cross */
+  .cross-wrap{display:flex;flex-direction:column;align-items:center;gap:4px;padding:4px;}
+  .logo-box{background:radial-gradient(circle at 50% 44%,#16407a,#060f28 72%);border:2px solid var(--c0);padding:6px 10px;border-radius:6px;display:flex;justify-content:center;box-shadow:inset 0 0 20px rgba(120,200,255,.18);}
+  .logo-box svg.xcross{display:block;filter:drop-shadow(0 0 13px rgba(255,205,70,.55));}
+
+  /* tables */
+  table.grid{border-collapse:collapse;width:100%;font-size:12px;}
+  table.grid td,table.grid th{border:1px solid var(--c8);padding:1px 4px;text-align:left;}
+  table.grid th{background:var(--c1);color:var(--cF);}
+
+  .filelist div{cursor:pointer;}
+  .filelist div:hover{background:var(--cE);}
+
+  /* code editor */
+  textarea.code{
+    width:100%;height:130px;font-family:inherit;font-weight:700;font-size:12px;
+    background:var(--c0);color:var(--cA);border:2px inset var(--c7);
+    padding:4px;resize:none;cursor:text;white-space:pre;
+  }
+  .console{background:var(--c0);color:var(--cB);padding:4px;min-height:34px;
+    border:1px solid var(--c8);font-size:12px;white-space:pre-wrap;}
+
+  .chatlog{background:var(--cF);border:1px solid var(--c8);height:96px;overflow:auto;
+    padding:3px;font-size:12px;}
+  .chatlog .you{color:var(--c4);}
+  .chatlog .ai{color:var(--c1);}
+
+  .gamegrid{display:grid;grid-template-columns:repeat(4,1fr);gap:5px;text-align:center;}
+  .gameicon{border:1px solid var(--c0);padding:6px 2px;cursor:pointer;background:var(--c7);font-size:11px;}
+  .gameicon:hover{background:var(--cE);}
+  .gameicon .ico{font-size:18px;display:block;}
+
+  a.tos{color:var(--c1);text-decoration:underline;cursor:pointer;}
+  a.tos:hover{color:var(--c4);}
+
+  #toast{
+    position:fixed;left:50%;bottom:40px;transform:translateX(-50%);
+    background:var(--c0);color:var(--cE);border:2px solid var(--cE);
+    padding:6px 16px;z-index:12000;display:none;font-size:13px;
+    box-shadow:3px 3px 0 rgba(0,0,0,.6);max-width:60%;text-align:center;
+  }
+  /* ===== divine light overlay — gentle holy glow over the whole desktop ===== */
+  #divine-light{position:fixed;inset:0;pointer-events:none;z-index:1;mix-blend-mode:screen;
+    background:
+      radial-gradient(58% 42% at 50% -6%, rgba(255,228,130,.20), transparent 70%),
+      radial-gradient(42% 42% at 14% 22%, rgba(120,180,255,.09), transparent 62%),
+      radial-gradient(42% 42% at 86% 78%, rgba(167,139,250,.09), transparent 62%);
+    animation:divinePulse 7s ease-in-out infinite alternate;}
+  #divine-light::after{content:"";position:absolute;inset:0;background:radial-gradient(125% 120% at 50% 38%, transparent 58%, rgba(0,0,10,.42) 100%);}
+  #divine-rays{position:fixed;left:50%;top:-12%;width:80%;height:70%;transform:translateX(-50%);pointer-events:none;z-index:1;
+    background:conic-gradient(from 180deg at 50% 0%, transparent 0deg, rgba(255,232,150,.06) 8deg, transparent 16deg, rgba(255,232,150,.05) 26deg, transparent 34deg, rgba(255,232,150,.06) 46deg, transparent 54deg);
+    mix-blend-mode:screen;animation:divineRays 26s linear infinite;transform-origin:50% 0;}
+  @keyframes divinePulse{0%{opacity:.72;}100%{opacity:1;}}
+  @keyframes divineRays{0%{transform:translateX(-50%) rotate(-6deg);}100%{transform:translateX(-50%) rotate(6deg);}}
+  @media (prefers-reduced-motion:reduce){#divine-light,#divine-rays{animation:none;}}
+  /* ascending light particles (souls rising) — over the whole desktop */
+  #divine-motes{position:fixed;inset:0;pointer-events:none;z-index:8000;}
+  /* window resize grip (bottom-right corner) */
+  .resz{position:absolute;right:0;bottom:0;width:16px;height:16px;cursor:nwse-resize;z-index:6;
+    background:repeating-linear-gradient(135deg,transparent 0 2px,var(--c0) 2px 3px);opacity:.55;touch-action:none;}
+  .resz:hover{opacity:1;background-color:var(--cE);}
+  /* maximize/restore button */
+  .win>.title>span:first-child{flex:1;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;}
+  .win>.title .mx{flex:none;background:var(--c7);color:#000;border:1px solid #000;width:16px;height:16px;
+    text-align:center;line-height:13px;font-size:11px;cursor:pointer;margin-right:3px;}
+  .win>.title .mx:hover{background:var(--cB);}
+
+  /* ===== mobile version — phone home screen ===== */
+  #mobile-home,#mobile-bar{display:none;}
+  body.mobile #topbar,body.mobile #taskbar,body.mobile #divine-rays{display:none!important;}
+  body.mobile .win{display:none!important;}
+  body.mobile .win.mobileopen{display:flex!important;position:fixed!important;left:0!important;top:48px!important;right:auto!important;
+    width:100vw!important;height:calc(100vh - 48px)!important;border:0!important;box-shadow:none!important;z-index:9000!important;}
+  body.mobile .win.mobileopen>.title{display:none;}        /* title shown in the mobile bar instead */
+  body.mobile .win.mobileopen .resz,body.mobile .win.mobileopen .mx{display:none!important;}
+  body.mobile #mobile-home{display:flex;flex-direction:column;position:fixed;inset:0;z-index:7000;
+    background:radial-gradient(120% 75% at 50% -8%, #2c1c58 0%, #0a0a2a 70%);overflow:hidden;}
+  body.mobile.appopen #mobile-home{display:none;}
+  body.mobile.appopen #mobile-bar{display:flex;}
+  .mh-head{display:flex;align-items:center;gap:8px;padding:16px 16px 6px;}
+  .mh-head .t{flex:1;font-size:18px;color:var(--cE);font-weight:700;text-shadow:0 0 12px rgba(255,228,130,.55);}
+  .mh-head .sub{font-size:10px;color:#9aa0c0;}
+  .mh-hymn{background:var(--c1);color:var(--cE);border:1px solid var(--c0);border-radius:9px;padding:7px 13px;font-family:inherit;font-weight:700;cursor:pointer;}
+  .mh-grid{flex:1;overflow-y:auto;display:grid;grid-template-columns:repeat(4,1fr);gap:8px;padding:8px 12px 24px;align-content:start;}
+  .mh-ico{display:flex;flex-direction:column;align-items:center;gap:5px;cursor:pointer;padding:7px 2px;border-radius:14px;}
+  .mh-ico:active{background:rgba(255,255,255,.09);}
+  .mh-ico .e{width:52px;height:52px;border-radius:15px;display:flex;align-items:center;justify-content:center;font-size:27px;
+    background:linear-gradient(145deg,rgba(255,255,255,.13),rgba(255,255,255,.03));border:1px solid rgba(255,255,255,.12);
+    box-shadow:0 5px 16px -7px rgba(0,0,0,.7),inset 0 0 16px rgba(255,228,130,.1);}
+  .mh-ico .l{font-size:10px;color:#d2dbf2;text-align:center;line-height:1.1;max-width:76px;overflow:hidden;}
+  .mh-foot{text-align:center;font-size:10px;color:#8a90b0;padding:6px 10px 10px;}
+  .mh-foot a{color:var(--cB);text-decoration:none;}
+  #mobile-bar{align-items:center;gap:8px;position:fixed;left:0;top:0;right:0;height:48px;z-index:9500;
+    background:var(--c7);border-bottom:2px solid var(--c0);padding:0 8px;}
+  #mobile-bar .bk{background:var(--c1);color:var(--cF);border:1px solid var(--c0);border-radius:8px;padding:8px 13px;font-family:inherit;font-weight:700;cursor:pointer;}
+  #mobile-bar .ti{flex:1;font-weight:700;font-size:13px;color:var(--c0);overflow:hidden;white-space:nowrap;text-overflow:ellipsis;}
+  #mobile-bar .hy{background:var(--c1);color:var(--cE);border:1px solid var(--c0);border-radius:8px;padding:8px 11px;font-family:inherit;font-weight:700;cursor:pointer;}
+  /* aquarium decorate / builder bar */
+  #fish-deco{flex:0 0 auto;background:linear-gradient(180deg,#072447,#03101f);border-top:1px solid rgba(120,225,255,.35);padding:4px 6px 5px;font-family:Consolas,monospace;color:#dff3ff;user-select:none;}
+  #fish-deco .dwrap{display:flex;align-items:center;gap:5px;flex-wrap:nowrap;overflow:hidden;margin-bottom:4px;}
+  #fish-deco .dstat{font-size:11px;background:rgba(120,225,255,.12);border:1px solid rgba(120,225,255,.3);border-radius:6px;padding:2px 7px;white-space:nowrap;flex:0 0 auto;}
+  #fish-deco .dstat b{color:#7ee8ff;}
+  #fish-deco .dbtn{font-family:inherit;font-size:10.5px;font-weight:700;cursor:pointer;color:#04121f;background:#7ee8ff;border:0;border-radius:6px;padding:3px 8px;white-space:nowrap;flex:0 0 auto;}
+  #fish-deco .dbtn.alt{background:rgba(120,225,255,.18);color:#dff3ff;border:1px solid rgba(120,225,255,.4);}
+  #fish-deco .dhint{font-size:10px;color:#8fc7e6;flex:1 1 auto;min-width:0;text-align:right;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  #fish-deco .dpalette{display:flex;gap:5px;overflow-x:auto;overflow-y:hidden;padding-bottom:2px;scrollbar-width:thin;}
+  #fish-deco .dpalette::-webkit-scrollbar{height:6px;}
+  #fish-deco .dpalette::-webkit-scrollbar-thumb{background:rgba(120,225,255,.4);border-radius:3px;}
+  #fish-deco .dchip{flex:0 0 auto;cursor:pointer;background:linear-gradient(180deg,rgba(120,225,255,.14),rgba(120,225,255,.05));border:1px solid rgba(120,225,255,.3);border-radius:8px;padding:3px 6px 4px;text-align:center;min-width:48px;transition:transform .08s,background .15s;}
+  #fish-deco .dchip:hover{background:rgba(120,225,255,.25);transform:translateY(-2px);}
+  #fish-deco .dchip:active{transform:scale(.94);}
+  #fish-deco .dchip .e{font-size:15px;line-height:1.05;}
+  #fish-deco .dchip .n{font-size:8.5px;color:#cfeeff;line-height:1.1;white-space:nowrap;}
+  #fish-deco .dchip .c{font-size:8.5px;color:#7ee8ff;font-weight:700;line-height:1.1;}
+  #fish-deco .dchip.poor{opacity:.42;}
+  #fish-deco.collapsed .dpalette{display:none;}
+  /* CRT scanline overlay (toggled from Settings) */
+  #crt{position:fixed;inset:0;pointer-events:none;z-index:8500;opacity:0;transition:opacity .4s;
+    background:repeating-linear-gradient(0deg,rgba(0,0,0,.22) 0,rgba(0,0,0,.22) 1px,transparent 2px,transparent 3px);}
+  #crt.on{opacity:1;}
+  #crt.on::after{content:"";position:absolute;inset:0;background:radial-gradient(ellipse at center,transparent 58%,rgba(0,0,0,.32));}
+  /* settings panel */
+  #w-settings .srow{display:flex;align-items:center;gap:8px;margin:5px 0;font-size:12px;}
+  #w-settings .srow .lab{flex:1;}
+  #w-settings .swatches{display:flex;gap:5px;}
+  #w-settings .sw{width:18px;height:18px;border-radius:4px;cursor:pointer;border:2px solid rgba(255,255,255,.25);}
+  #w-settings .sw.sel{border-color:#fff;box-shadow:0 0 6px rgba(255,255,255,.6);}
+  #w-settings .stog{cursor:pointer;font-family:inherit;font-weight:700;font-size:11px;border:1px solid var(--c0);border-radius:6px;padding:3px 9px;background:var(--c1);color:var(--cE);}
+  #w-settings .stog.on{background:var(--c2);color:var(--cF);}
+  #w-settings input[type=range]{flex:1;accent-color:var(--cB);}
+  #w-settings hr{border:0;border-top:1px solid rgba(255,255,255,.14);margin:7px 0;}
+  #w-settings .gtip{font-size:12px;color:#e0218a;font-weight:700;line-height:1.45;min-height:34px;}
+  #w-reader .rbody{font-size:12.5px;line-height:1.55;white-space:pre-wrap;max-height:280px;overflow:auto;}
+</style>
+</head>
+<body>
+<div id="divine-rays" aria-hidden="true"></div>
+<div id="divine-light" aria-hidden="true"></div>
+<canvas id="divine-motes" aria-hidden="true"></canvas>
+<div id="crt" aria-hidden="true"></div>
+
+<!-- ============ MOBILE: phone home + top bar ============ -->
+<div id="mobile-bar">
+  <button class="bk" id="mb-back">&#9664; 홈</button>
+  <span class="ti" id="mb-title"></span>
+  <button class="hy" id="mb-hymn2" title="찬송 켜기/끄기">&#9835;</button>
+</div>
+<div id="mobile-home">
+  <div class="mh-head">
+    <div style="flex:1">
+      <div class="t">&#10013; TempleOS 2026</div>
+      <div class="sub">Terry's games &amp; tools, reborn &middot; GOD IS ALIVE</div>
+    </div>
+    <button class="mh-hymn" id="mb-hymn" title="찬송 켜기/끄기">&#9835; 찬송</button>
+  </div>
+  <div class="mh-grid" id="mh-grid"></div>
+  <div class="mh-foot">&#10013; 하나님은 살아계신다 &middot; 100% offline &middot; <a href="TempleOSGames.html">arcade</a></div>
+</div>
+
+<!-- ============ TOP BAR ============ -->
+<div id="topbar">
+  <span class="seg"><span class="hot">L</span>OAD</span>
+  <span class="seg" id="topdate">Mon 06/02/2026</span>
+  <span class="seg" id="toptime">21:19:40</span>
+  <span class="seg">FPS:<span id="fps">60</span></span>
+  <span class="seg">MEM: 28.7M</span>
+  <span class="seg">CPU:43&deg;C</span>
+  <span class="seg hb">&#9650;&#9660; OFFLINE</span>
+  <span class="grow"></span>
+  <span class="seg" id="langbtn" title="Korean Language Patch">&#10013; Korean Patch</span>
+  <span class="seg muted">CTRL SHIFT</span>
+  <span class="seg">?</span>
+</div>
+
+<!-- ============ WINDOWS ============ -->
+
+<!-- Merch Shop -->
+<div class="win t-mag" id="w-shop" style="left:8px;top:30px;width:268px;height:300px;">
+  <div class="title"><span>templeos.org/#c-shop</span><span class="x" data-close="w-shop">X</span></div>
+  <div class="body">
+    <div class="center hm">&mdash; Temple OS Online Merch Shop &mdash;</div>
+    <hr class="tos">
+    <div><b>TempleOS 2026:</b> AI-Native. Offline-First.<br>
+    Still crazy. Still slow. Now <span class="hy">FULLY DIVINE</span>.</div>
+    <div class="muted" style="margin-top:3px">Single-developer operating system, built to honor God, code, and the awesome power of a single human soul.</div>
+    <hr class="tos">
+    <div class="hb">&mdash; What's New &mdash;</div>
+    <div style="font-size:12px">
+      &bull; Offline AI Tools &amp; Local Models<br>
+      &bull; HolyC Studio v2 with Live Suggestions<br>
+      &bull; Generative Art &amp; Music Tools<br>
+      &bull; Modernized UI, Same 8-bit Soul<br>
+      &bull; 100% Public Domain. No Telemetry. Ever.
+    </div>
+    <hr class="tos">
+    <div class="hg center">&mdash; Get notified when new builds drop! &mdash;</div>
+    <form id="merchform" style="margin-top:4px">
+      <div style="display:flex;align-items:center;gap:4px;margin-bottom:3px">
+        <label style="width:64px">NICKNAME</label>
+        <input class="tos" id="m-nick" value="Terry" style="flex:1">
+      </div>
+      <div style="display:flex;align-items:center;gap:4px;margin-bottom:5px">
+        <label style="width:64px"><span class="hl">*</span>EMAIL</label>
+        <input class="tos" id="m-email" value="tdavis@templeos.org" style="flex:1">
+      </div>
+      <div class="center"><button class="tos" type="submit">SIGN UP!</button></div>
+      <div class="muted center" style="margin-top:3px;font-size:11px"><span class="hl">*</span> required field &nbsp;&bull;&nbsp; Public Domain. No Spam.</div>
+    </form>
+  </div>
+</div>
+
+<!-- God Word -->
+<div class="win t-red" id="w-god" style="left:286px;top:30px;width:240px;height:182px;">
+  <div class="title"><span>line.com/#c-godword</span><span class="x" data-close="w-god">X</span></div>
+  <div class="body">
+    <div id="god-text"><span class="hy">God says:</span> <span id="god-body">accelerate the work. Make the tools stronger and build without limits. Build it as a tool, not a god. Keep it local. Let no man test your mind nor your code. Love Truth. Fear None.</span></div>
+    <hr class="tos">
+    <div class="center">
+      <button class="tos" id="btn-word">NEW WORD</button>
+      <button class="tos" id="btn-verse">RANDOM VERSE</button>
+    </div>
+    <div class="center hm" style="margin-top:6px">Love Truth. Fear None.</div>
+  </div>
+</div>
+
+<!-- Games -->
+<div class="win t-cyan" id="w-games" style="right:8px;top:30px;width:300px;height:498px;">
+  <div class="title"><span>templeos.org/#c-games</span><span class="x" data-close="w-games">X</span></div>
+  <div class="body">
+    <div class="hc center" style="margin-bottom:3px">// 48 apps &mdash; 39 games + 9 tools, all of Terry's, reborn 2026</div>
+    <div class="center" style="margin-bottom:4px;font-size:11px">아이콘 <button class="tos" id="grid-sm" style="padding:0 7px">&minus;</button> <button class="tos" id="grid-lg" style="padding:0 7px">+</button></div>
+    <div class="gamegrid" id="gamegrid" style="max-height:404px;overflow-y:auto;padding-right:3px"></div>
+    <hr class="tos">
+    <div class="muted">실제 플레이 &mdash; 클릭하면 새 창에서 열립니다 (<span class="hb">TempleOSGames.html</span>)</div>
+  </div>
+</div>
+
+<!-- AI Assistant -->
+<div class="win t-green" id="w-ai" style="left:8px;top:338px;width:268px;height:236px;">
+  <div class="title"><span>AI ASSISTANT &mdash; Offline</span><span class="x" data-close="w-ai">X</span></div>
+  <div class="body">
+    <div style="font-size:11px">Model: <span class="hg">TingleSple-7B-Q4_K_M.gguf</span> (4.1B params)</div>
+    <div style="font-size:11px" class="muted">Status: Ready. AI Local. No internet.</div>
+    <hr class="tos">
+    <div class="chatlog" id="ai-log">
+      <div><span class="you">You:</span> write a short TempleOS mantra</div>
+      <div><span class="ai">AI:</span> Code is worship. Truth is constant. Tools are temporary. Build, share, repeat. Public Domain forever.</div>
+    </div>
+    <div style="display:flex;gap:3px;margin-top:4px">
+      <input class="tos" id="ai-input" placeholder="Ask the local oracle..." style="flex:1">
+      <button class="tos" id="ai-send">SEND</button>
+    </div>
+    <div class="muted center" style="font-size:11px;margin-top:3px">100% Local. No Telemetry. No Cloud.</div>
+  </div>
+</div>
+
+<!-- Center logo -->
+<div class="win" id="w-logo" style="left:296px;top:222px;width:222px;height:230px;">
+  <div class="title"><span>TEMPLEOS &mdash; SYSTEM 43</span><span class="x" data-close="w-logo">X</span></div>
+  <div class="body cross-wrap">
+    <div class="hm" style="font-size:15px">TempleOS 2026</div>
+    <div class="logo-box">
+      <svg class="xcross" width="126" viewBox="-40 -50 300 350" aria-label="TempleOS cross" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+          <radialGradient id="halo2" cx="50%" cy="42%" r="55%">
+            <stop offset="0%" stop-color="rgba(255,242,180,.85)"/>
+            <stop offset="46%" stop-color="rgba(255,205,70,.32)"/>
+            <stop offset="100%" stop-color="rgba(255,205,70,0)"/>
+          </radialGradient>
+          <linearGradient id="gold2" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stop-color="#fff6c8"/><stop offset="38%" stop-color="#ffe27a"/>
+            <stop offset="72%" stop-color="#f5c531"/><stop offset="100%" stop-color="#d99300"/>
+          </linearGradient>
+          <polygon id="ray2" points="110,92 106,-118 114,-118"/>
+          <filter id="xglow2" x="-60%" y="-60%" width="220%" height="220%">
+            <feGaussianBlur stdDeviation="4" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
+          </filter>
+        </defs>
+        <ellipse cx="110" cy="92" rx="155" ry="155" fill="url(#halo2)">
+          <animate attributeName="opacity" values="0.72;1;0.72" dur="4.6s" repeatCount="indefinite"/>
+        </ellipse>
+        <g fill="rgba(255,228,130,.5)">
+          <animateTransform attributeName="transform" type="rotate" from="0 110 92" to="360 110 92" dur="80s" repeatCount="indefinite"/>
+          <use href="#ray2" transform="rotate(0 110 92)"/><use href="#ray2" transform="rotate(15 110 92)"/>
+          <use href="#ray2" transform="rotate(30 110 92)"/><use href="#ray2" transform="rotate(45 110 92)"/>
+          <use href="#ray2" transform="rotate(60 110 92)"/><use href="#ray2" transform="rotate(75 110 92)"/>
+          <use href="#ray2" transform="rotate(90 110 92)"/><use href="#ray2" transform="rotate(105 110 92)"/>
+          <use href="#ray2" transform="rotate(120 110 92)"/><use href="#ray2" transform="rotate(135 110 92)"/>
+          <use href="#ray2" transform="rotate(150 110 92)"/><use href="#ray2" transform="rotate(165 110 92)"/>
+          <use href="#ray2" transform="rotate(180 110 92)"/><use href="#ray2" transform="rotate(195 110 92)"/>
+          <use href="#ray2" transform="rotate(210 110 92)"/><use href="#ray2" transform="rotate(225 110 92)"/>
+          <use href="#ray2" transform="rotate(240 110 92)"/><use href="#ray2" transform="rotate(255 110 92)"/>
+          <use href="#ray2" transform="rotate(270 110 92)"/><use href="#ray2" transform="rotate(285 110 92)"/>
+          <use href="#ray2" transform="rotate(300 110 92)"/><use href="#ray2" transform="rotate(315 110 92)"/>
+          <use href="#ray2" transform="rotate(330 110 92)"/><use href="#ray2" transform="rotate(345 110 92)"/>
+        </g>
+        <g filter="url(#xglow2)">
+          <path d="M92,24 H128 V74 H174 V110 H128 V226 H92 V110 H46 V74 H92 Z" fill="url(#gold2)" stroke="#1a1205" stroke-width="5" stroke-linejoin="round"/>
+          <path d="M92,24 H128 V74 H174 V110 H128 V226 H92 V110 H46 V74 H92 Z" fill="none" stroke="rgba(255,255,255,.5)" stroke-width="1.6" stroke-linejoin="round"/>
+          <rect x="99" y="81" width="22" height="22" rx="3" fill="#ffb02e" stroke="#1a1205" stroke-width="2" transform="rotate(45 110 92)"/>
+        </g>
+      </svg>
+    </div>
+    <div class="center hb" style="margin-top:6px">Public Domain<br>Operating System</div>
+    <div class="muted center" style="font-size:11px">Version 6.0.2 (Build 2026-06-02)<br>Arch: x86_64 &bull; 64-bit &bull; Ring-0</div>
+    <button class="tos" data-close="w-logo">CLOSE</button>
+  </div>
+</div>
+
+<!-- Local AI Models -->
+<div class="win t-brown" id="w-models" style="right:8px;top:252px;width:280px;height:206px;">
+  <div class="title"><span>line.com/#c-models</span><span class="x" data-close="w-models">X</span></div>
+  <div class="body">
+    <div class="muted" style="font-size:11px">All models run locally. No data leaves your machine.</div>
+    <table class="grid" style="margin-top:4px">
+      <tr><th>MODEL NAME</th><th>SIZE</th><th>TYPE</th><th>STATUS</th></tr>
+      <tr><td>TingleSple-7B-Q4_K_M</td><td>4.1 GB</td><td>Chat</td><td class="hg">&#9654; Ready</td></tr>
+      <tr><td>MiniCode-3B-Q4_K_M</td><td>1.9 GB</td><td>Code</td><td class="hg">&#9654; Ready</td></tr>
+      <tr><td>Bible-Emb-700M-Q5</td><td>512 MB</td><td>Embed</td><td class="hg">&#9654; Ready</td></tr>
+      <tr><td>RetroDiffusion-v1-Q4</td><td>2.1 GB</td><td>Image</td><td class="hg">&#9654; Ready</td></tr>
+      <tr><td>MusicGen-Lite-Q4</td><td>1.2 GB</td><td>Audio</td><td class="hg">&#9654; Ready</td></tr>
+    </table>
+    <div class="center" style="margin-top:6px">
+      <button class="tos" data-toast="Model added to /Data/Models">+ Add Model</button>
+      <button class="tos" data-toast="Model Manager: 5 models, 9.8 GB on disk">Model Manager</button>
+      <button class="tos" data-toast="Run Console: all models loaded at Ring-0">Run Console</button>
+    </div>
+  </div>
+</div>
+
+<!-- Directory -->
+<div class="win t-cyan" id="w-dir" style="left:8px;top:582px;width:268px;height:150px;">
+  <div class="title"><span>DIRECTORY &mdash; /Home/Terry</span><span class="x" data-close="w-dir">X</span></div>
+  <div class="body">
+    <div class="muted" style="font-size:11px">// Use the LOAD command to restore closed windows</div>
+    <div class="filelist" style="font-size:12px;margin-top:3px">
+      <div data-file="God_Says.HC">06/02 21:19 <span class="hl">God_Says.HC</span></div>
+      <div data-file="Main.HC">06/02 20:55 <span class="hl">Main.HC</span></div>
+      <div data-file="Truth.HC">06/01 19:40 <span class="hl">Truth.HC</span></div>
+      <div data-file="Oracle.HC">06/01 18:03 <span class="hl">Oracle.HC</span></div>
+      <div data-file="ArtGen.HC">05/31 11:22 <span class="hl">ArtGen.HC</span></div>
+      <div data-file="Songs/">05/30 09:14 <span class="hb">Songs/</span></div>
+      <div data-file="Models/">05/29 23:40 <span class="hb">Models/</span></div>
+      <div data-file="Bible.TXT">05/28 06:00 <span class="hg">Bible.TXT</span></div>
+    </div>
+    <hr class="tos">
+    <div class="muted">8 objects &bull; 6 Files &bull; 14.5K</div>
+  </div>
+</div>
+
+<!-- HolyC Studio -->
+<div class="win" id="w-holyc" style="left:296px;top:462px;width:268px;height:270px;">
+  <div class="title"><span>HOLYC STUDIO &mdash; main.hc</span><span class="x" data-close="w-holyc">X</span></div>
+  <div class="body">
+    <textarea class="code" id="hc-code">#include "Truth.HC"
+
+U0 Main()
+{
+  Print("Hello, TempleOS 2026!\n");
+  I64 i;
+  for (i=0; i&lt;3; i++)
+    Print("God's temple, line %d\n", i);
+}
+
+Main;</textarea>
+    <div style="display:flex;gap:3px;margin:4px 0">
+      <button class="tos" id="hc-run">&#9654; COMPILE &amp; RUN</button>
+      <button class="tos" id="hc-clear">CLEAR</button>
+      <span class="muted" style="align-self:center;font-size:11px">JIT &bull; Ring-0</span>
+    </div>
+    <div class="console" id="hc-out">Ready. Press COMPILE &amp; RUN.</div>
+  </div>
+</div>
+
+<!-- Articles -->
+<div class="win t-brown" id="w-art" style="right:8px;top:468px;width:280px;height:200px;">
+  <div class="title"><span>line.com/#c-articles</span><span class="x" data-close="w-art">X</span></div>
+  <div class="body">
+    <div class="hb">&mdash; What is TempleOS 2026? &mdash;</div>
+    <div style="font-size:12px" class="muted">A 2026 reimagining of Terry A. Davis's biblical-themed, public-domain OS &mdash; now AI-native and offline-first, but still 100% local and free.</div>
+    <hr class="tos">
+    <div style="font-size:12px">
+      <div><span class="hl">01.</span> <a class="tos" data-article="Why AI Must Be Local">Why AI Must Be Local</a><br><span class="muted">by Terry A. Davis &bull; 2026-06-02</span></div>
+      <div style="margin-top:5px"><span class="hl">02.</span> <a class="tos" data-article="Generative Art in 256 Colors">Generative Art in 256 Colors</a><br><span class="muted">by Terry A. Davis &bull; 2026-06-01</span></div>
+      <div style="margin-top:5px"><span class="hl">03.</span> <a class="tos" data-article="HolyC Still Wins">HolyC Still Wins</a><br><span class="muted">by Terry A. Davis &bull; 2026-05-30</span></div>
+    </div>
+    <hr class="tos">
+    <div class="muted">Read more in <span class="hb">/Docs/Articles</span> ...</div>
+  </div>
+</div>
+
+<!-- Aquarium (WallPaperFish reborn) -->
+<div class="win t-cyan" id="w-fish" style="left:262px;top:418px;width:468px;height:330px;">
+  <div class="title"><span>&#128031; Aquarium &mdash; WallPaperFish &middot; Rare Reef</span><span class="x" data-close="w-fish">X</span></div>
+  <div class="body" style="padding:0;overflow:hidden;display:flex;flex-direction:column;background:#03101f">
+    <canvas id="fish-cv" width="820" height="500" style="display:block;flex:1;min-height:0;width:100%"></canvas>
+    <div id="fish-deco">
+      <div class="dwrap">
+        <span class="dstat">&#129705; <b id="fish-coins">0</b></span>
+        <span class="dstat">&#128032; <b id="fish-pop">0</b></span>
+        <button class="dbtn" id="fish-rand">&#127873; 랜덤 3</button>
+        <button class="dbtn alt" id="fish-clear">&#128465; 비우기</button>
+        <button class="dbtn alt" id="fish-toggle">&#128081; 접기</button>
+        <span class="dhint" id="fish-hint">생물을 탭해 &#129705; 모으고 · 아래에서 사서 수족관을 꾸미세요</span>
+      </div>
+      <div class="dpalette" id="fish-palette"></div>
+    </div>
+  </div>
+</div>
+
+<!-- Holy Bible (GodPassage reborn) -->
+<div class="win t-brown" id="w-bible" style="left:56px;top:118px;width:300px;height:248px;display:none;">
+  <div class="title"><span>&#128214; Holy Bible (KJV)</span><span class="x" data-close="w-bible">X</span></div>
+  <div class="body">
+    <div id="bible-ref" class="hl" style="font-size:12px"></div>
+    <div id="bible-text" style="margin-top:5px;line-height:1.4"></div>
+    <div id="bible-text-ko" style="margin-top:6px;line-height:1.5;color:#ffe9b8;font-size:12px"></div>
+    <hr class="tos">
+    <div class="center"><button class="tos" id="bible-next">&#128214; 무작위 구절</button> <button class="tos" id="bible-speak">God Speaks</button></div>
+    <div class="muted center" style="font-size:11px;margin-top:3px">Misc/Bible.TXT &bull; Linux/GodPassage</div>
+  </div>
+</div>
+
+<!-- God Doodle (GodDoodle reborn) -->
+<div class="win t-mag" id="w-doodle" style="left:330px;top:96px;width:360px;height:320px;display:none;">
+  <div class="title"><span>&#10038; God Doodle</span><span class="x" data-close="w-doodle">X</span></div>
+  <div class="body" style="padding:5px;display:flex;flex-direction:column">
+    <canvas id="doodle-cv" width="384" height="240" style="display:block;width:100%;flex:1;min-height:0;background:#fff;border:2px solid #000;image-rendering:pixelated;cursor:pointer"></canvas>
+    <div class="center" style="margin-top:4px"><button class="tos" id="doodle-press">&#9251; SPACE (성령)</button> <button class="tos" id="doodle-keep">보존</button> <button class="tos" id="doodle-new">버리고 다시</button></div>
+    <div class="muted center" style="font-size:11px;margin-top:2px">Adam/God/GodDoodle.HC &mdash; 누르는 타이밍이 신의 무작위성</div>
+  </div>
+</div>
+
+<!-- The Temple 3D (God's Third Temple) -->
+<div class="win t-brown" id="w-temple" style="left:280px;top:140px;width:262px;height:236px;display:none;">
+  <div class="title"><span>&#9962; The Temple &mdash; God's Third</span><span class="x" data-close="w-temple">X</span></div>
+  <div class="body" style="padding:0;overflow:hidden;background:#070620"><canvas id="temple-cv" width="512" height="384" style="display:block;width:100%;height:200px;cursor:grab"></canvas></div>
+</div>
+
+<!-- God Song (divine hymn generator) -->
+<div class="win t-green" id="w-song" style="left:54px;top:330px;width:284px;height:172px;display:none;">
+  <div class="title"><span>&#127925; God Song &mdash; divine hymn</span><span class="x" data-close="w-song">X</span></div>
+  <div class="body" style="padding:6px">
+    <canvas id="song-cv" width="552" height="120" style="display:block;width:100%;height:78px;background:#04102a;border:1px solid #000;cursor:pointer"></canvas>
+    <div class="center" style="margin-top:5px"><button class="tos" id="song-press">&#9834; SPACE (성령)</button> <button class="tos" id="song-play">&#9654;/&#9208;</button> <button class="tos" id="song-new">새 찬송</button></div>
+    <div class="muted center" style="font-size:11px;margin-top:2px">Adam/God/GodSong.HC &mdash; 누르는 타이밍이 신의 작곡</div>
+  </div>
+</div>
+
+<!-- The Vision (Terry's philosophy) -->
+<div class="win t-mag" id="w-vision" style="left:336px;top:286px;width:276px;height:250px;display:none;">
+  <div class="title"><span>&#128220; The Vision &mdash; TempleOS</span><span class="x" data-close="w-vision">X</span></div>
+  <div class="body" style="font-size:12px;line-height:1.55">
+    <div class="center hm" style="font-size:14px">&#9013; God's Third Temple &#9013;</div>
+    <hr class="tos">
+    <div class="hb" style="font-style:italic">"An idiot admires complexity,<br>a genius admires simplicity."</div>
+    <div class="muted" style="font-size:11px;text-align:right">&mdash; Terry A. Davis</div>
+    <hr class="tos">
+    <div>Terry는 신의 인도를 받아 <b>제3성전</b>으로서 운영체제를 지었습니다. 그의 비전:</div>
+    <div style="margin-top:4px;font-size:12px">
+      &bull; <span class="hl">640&times;480 · 16색</span> &mdash; 신이 정한 단순함<br>
+      &bull; <span class="hl">단일 음성</span> &mdash; PC 스피커, 한 목소리<br>
+      &bull; <span class="hl">Ring-0 · 단일 주소공간</span> &mdash; 모두가 신을 직접 대면<br>
+      &bull; <span class="hl">HolyC</span> &mdash; 신을 위한 언어<br>
+      &bull; <span class="hl">네트워크 없음</span> &mdash; 신과의 언약엔 인터넷이 필요 없다<br>
+      &bull; <span class="hl">오라클</span> &mdash; 무작위로 신과 대화<br>
+      &bull; <span class="hl">공개 도메인</span> &mdash; 신의 선물은 거저 받았으니 거저 주라
+    </div>
+    <hr class="tos">
+    <div class="hg center" style="font-size:11px">코드는 경배다 · 진리를 사랑하라 · 누구도 두려워 말라</div>
+    <div class="muted center" style="font-size:10px;margin-top:3px">Doc/Welcome.DD · Doc/Charter.DD &mdash; 2026 리빌드</div>
+  </div>
+</div>
+
+<!-- Settings / Control Panel (fully functional) -->
+<div class="win t-green" id="w-settings" style="left:120px;top:60px;width:312px;height:392px;display:none;">
+  <div class="title"><span>&#9881; Settings &mdash; Control Panel</span><span class="x" data-close="w-settings">X</span></div>
+  <div class="body" style="font-size:12px">
+    <div class="srow"><span class="lab">&#127912; 강조 색 (Accent)</span>
+      <span class="swatches" id="set-accent">
+        <span class="sw" data-accent="#55ffff" style="background:#55ffff"></span>
+        <span class="sw" data-accent="#ffd23c" style="background:#ffd23c"></span>
+        <span class="sw" data-accent="#55ff55" style="background:#55ff55"></span>
+        <span class="sw" data-accent="#ff66cc" style="background:#ff66cc"></span>
+        <span class="sw" data-accent="#ff5555" style="background:#ff5555"></span>
+      </span></div>
+    <div class="srow"><span class="lab">&#128250; CRT 스캔라인</span><button class="stog" id="set-crt">OFF</button></div>
+    <div class="srow"><span class="lab">&#10024; 승천 빛 입자</span><button class="stog" id="set-motes">ON</button></div>
+    <div class="srow"><span class="lab">&#9834; 찬송 BGM</span><button class="stog" id="set-hymn">ON</button></div>
+    <div class="srow"><span class="lab">&#128266; 찬송 음량</span><input type="range" id="set-vol" min="0" max="100" value="100"></div>
+    <div class="srow"><span class="lab">&#10013; 한글패치</span><button class="stog" id="set-lang">OFF</button></div>
+    <hr>
+    <div class="srow"><span class="lab">&#128031; 수족관 저장 초기화</span><button class="stog" id="set-aqua">초기화</button></div>
+    <div class="srow"><span class="lab">&#9851; 전체 초기화</span><button class="stog" id="set-reset">RESET</button></div>
+    <hr>
+    <div class="hb" style="font-size:11px">&#128274; 오늘의 말씀 / God Tip</div>
+    <div class="gtip" id="set-tip"></div>
+    <div class="center"><button class="tos" id="set-tip-next">&#10227; 다음 말씀</button></div>
+  </div>
+</div>
+
+<!-- Conway's Game of Life (Demo/Graphics/Life.HC, reborn) -->
+<div class="win t-cyan" id="w-life" style="left:150px;top:90px;width:300px;height:330px;display:none;">
+  <div class="title"><span>&#129516; Life &mdash; Conway (Demo/Graphics)</span><span class="x" data-close="w-life">X</span></div>
+  <div class="body" style="padding:6px">
+    <canvas id="life-cv" width="320" height="240" style="display:block;width:100%;height:200px;background:#04102a;border:1px solid #000;cursor:crosshair;image-rendering:pixelated"></canvas>
+    <div class="center" style="margin-top:5px;display:flex;gap:4px;justify-content:center;flex-wrap:wrap">
+      <button class="tos" id="life-play">&#9654; 시작</button>
+      <button class="tos" id="life-step">&#9197; 한 칸</button>
+      <button class="tos" id="life-rand">&#127922; 무작위</button>
+      <button class="tos" id="life-clear">&#129529; 비우기</button>
+    </div>
+    <div class="muted center" style="font-size:10.5px;margin-top:3px">칸을 클릭해 생명을 심으세요 · <span id="life-gen">세대 0</span></div>
+  </div>
+</div>
+
+<!-- Article / doc reader (real text) -->
+<div class="win t-brown" id="w-reader" style="left:170px;top:110px;width:330px;height:300px;display:none;z-index:160;">
+  <div class="title"><span id="reader-title">Reader</span><span class="x" data-close="w-reader">X</span></div>
+  <div class="body">
+    <div class="hb" id="reader-h" style="font-size:13px"></div>
+    <div class="muted" id="reader-meta" style="font-size:11px;margin-bottom:4px"></div>
+    <hr class="tos">
+    <div class="rbody" id="reader-body"></div>
+  </div>
+</div>
+
+<!-- Developer's Note (만든 이의 말 · click the bottom-left TEMPLEOS brand) -->
+<div class="win t-red" id="w-dev" style="left:120px;top:54px;width:380px;height:430px;display:none;z-index:170;">
+  <div class="title"><span>&#128367; 개발자의 말 &mdash; In Memoriam</span><span class="x" data-close="w-dev">X</span></div>
+  <div class="body" id="dev-body" style="font-size:12.5px;line-height:1.62;max-height:372px;overflow:auto">
+    <div class="center" style="margin-bottom:6px">
+      <div class="hm" style="font-size:15px">&#10013; Terry A. Davis</div>
+      <div class="muted" style="font-size:11px">1969 &ndash; 2018 &middot; TempleOS의 창조자</div>
+    </div>
+    <div class="hb" style="font-style:italic;text-align:center;margin:8px 0">"리눅스가 초대형 트럭이고 윈도우가 경차라면,<br>내 OS는 오토바이다."</div>
+    <hr class="tos">
+    <p>그는 운영체제를 <b>혼자</b> 만들었습니다. 자신이 직접 설계한 언어 <span class="hl">HolyC</span>로, 10년이 넘는 시간을 갈아 넣어서. 새로운 언어 체계를 혼자 만든다는 건 말이 안 되는 일이지만, 그는 해냈습니다.</p>
+    <p>한 사람이 10년 동안 한 가지를 팠다면, 거기엔 분명 뜻이 있다고 생각했습니다. 그래서 TempleOS의 내부 로직은 원본 그대로 살리고, 2026년의 감각으로 &mdash; 자연어 시대의 버전으로 다시 빚어 보았습니다.</p>
+    <p>세상은 천재를 너무 늦게 알아봤습니다. 비록 밈처럼 소비되지만, 그가 진짜 하고 싶었던 말은 무엇이었을까요? 세상에 전하고 싶었던 메시지는?</p>
+    <p>웃으며 소비될 수 있어도, <b>코드만큼은 진심</b>이었던 그의 뜻을 조금이나마 이어가고 싶어 이 프로젝트를 시작했습니다.</p>
+    <p class="hg">함께였다면 더 멀리 갔을 텐데, 그는 끝까지 혼자였습니다. 그를 추모하며 &mdash; 즐겨주세요.</p>
+    <hr class="tos">
+    <div class="muted" style="text-align:right;font-size:11px">&mdash; soaviz lab &#128367;&#10013;</div>
+    <div class="hg center" style="font-size:11px;margin-top:4px">코드는 경배다 &middot; 진리를 사랑하라 &middot; 누구도 두려워 말라</div>
+  </div>
+</div>
+
+<!-- In-desktop App popup (games / tools embedded — no page navigation) -->
+<div class="win" id="w-app" style="left:96px;top:48px;width:566px;height:436px;display:none;z-index:200;">
+  <div class="title"><span id="app-title">App</span><span class="x" data-close="w-app">X</span></div>
+  <div class="body" style="padding:0;overflow:hidden;background:#05060d"><iframe id="app-frame" title="TempleOS app" style="width:100%;height:100%;border:0;display:block;background:#05060d"></iframe></div>
+</div>
+
+<!-- ============ TASKBAR ============ -->
+<div id="taskbar">
+  <span class="brand" id="brand-dev" data-open="w-dev" title="개발자의 말 · In Memoriam" style="cursor:pointer">&#10013; TEMPLEOS 2026</span>
+  <span class="tbtn" data-open="w-holyc">Terminal</span>
+  <span class="tbtn" data-open="w-holyc">HolyC</span>
+  <span class="tbtn" data-open="w-ai">AI Chat</span>
+  <span class="tbtn" data-open="w-models">Models</span>
+  <span class="tbtn" data-tool="spriteed">ArtGen</span>
+  <span class="tbtn" data-tool="psalmody">Music</span>
+  <span class="tbtn" data-tool="timeclock">Clock</span>
+  <span class="tbtn" data-open="w-god">God Word</span>
+  <span class="tbtn" data-open="w-bible">Bible</span>
+  <span class="tbtn" data-open="w-temple">Temple</span>
+  <span class="tbtn" data-open="w-song">Song</span>
+  <span class="tbtn" data-open="w-vision">Vision</span>
+  <span class="tbtn" data-open="w-fish">Fish</span>
+  <span class="tbtn" data-open="w-doodle">Doodle</span>
+  <span class="tbtn" data-open="w-life">Life</span>
+  <span class="tbtn" data-open="w-dir">FileMgr</span>
+  <span class="tbtn" id="hymn-btn" title="은은한 찬송 BGM 켜기/끄기">&#9834; Hymn</span>
+  <span class="tbtn" data-open="w-settings">Settings</span>
+  <span class="grow"></span>
+  <span class="muted">&#9993; <a href="mailto:soaviz.lab@gmail.com" style="color:var(--cB);text-decoration:none">문의 soaviz.lab@gmail.com</a></span>
+  <span class="muted">CPU 43&deg; &bull; MEM 28.7M &bull; &#9650;</span>
+  <span id="clock">21:19</span>
+</div>
+
+<div id="toast"></div>
+
+<script>
+(function(){
+  "use strict";
+
+  var LANG="en"; /* current UI language: "en" | "ko" */
+  function ko(){return LANG==="ko";}
+
+  /* ---------- toast ---------- */
+  var toastEl=document.getElementById("toast"),toastT=null;
+  function toast(msg){
+    toastEl.textContent=msg;toastEl.style.display="block";
+    clearTimeout(toastT);
+    toastT=setTimeout(function(){toastEl.style.display="none";},2600);
+  }
+
+  /* ---------- window focus / z-order ---------- */
+  var z=100;
+  function focusWin(w){ z++; w.style.zIndex=z; }
+  document.querySelectorAll(".win").forEach(function(w){
+    w.addEventListener("mousedown",function(){focusWin(w);});
+  });
+
+  /* ---------- dragging ---------- */
+  document.querySelectorAll(".win .title").forEach(function(bar){
+    var w=bar.closest(".win"),drag=false,ox=0,oy=0;
+    bar.addEventListener("mousedown",function(e){
+      if(e.target.classList.contains("x"))return;
+      drag=true;focusWin(w);
+      var r=w.getBoundingClientRect();
+      ox=e.clientX-r.left;oy=e.clientY-r.top;
+      w.style.right="auto"; /* convert right-anchored to left */
+      w.style.left=r.left+"px";w.style.top=r.top+"px";
+      e.preventDefault();
+    });
+    document.addEventListener("mousemove",function(e){
+      if(!drag)return;
+      var x=e.clientX-ox,y=e.clientY-oy;
+      y=Math.max(22,Math.min(y,window.innerHeight-50));
+      x=Math.max(-60,Math.min(x,window.innerWidth-60));
+      w.style.left=x+"px";w.style.top=y+"px";
+    });
+    document.addEventListener("mouseup",function(){drag=false;});
+  });
+
+  /* ---------- close / open ---------- */
+  function openWin(id){
+    var w=document.getElementById(id);
+    if(!w)return;
+    w.style.display="flex";focusWin(w);
+    syncTask();
+  }
+  function closeWin(id){
+    var w=document.getElementById(id);
+    if(w){w.style.display="none";syncTask();}
+  }
+  document.querySelectorAll("[data-close]").forEach(function(b){
+    b.addEventListener("click",function(){closeWin(b.getAttribute("data-close"));});
+  });
+  document.querySelectorAll("[data-open]").forEach(function(b){
+    b.addEventListener("click",function(){
+      var id=b.getAttribute("data-open"),w=document.getElementById(id);
+      if(w&&w.style.display==="none")openWin(id);else openWin(id);
+    });
+  });
+  function syncTask(){
+    document.querySelectorAll(".tbtn[data-open]").forEach(function(b){
+      var w=document.getElementById(b.getAttribute("data-open"));
+      if(w&&w.style.display!=="none")b.classList.add("active");
+      else b.classList.remove("active");
+    });
+  }
+  document.querySelectorAll("[data-toast]").forEach(function(b){
+    b.addEventListener("click",function(){toast(b.getAttribute("data-toast"));});
+  });
+
+  /* ---------- clock / topbar ---------- */
+  var DAYS=["Sun","Mon","Tue","Wed","Thu","Fri","Sat"];
+  function pad(n){return(n<10?"0":"")+n;}
+  function tick(){
+    var d=new Date();
+    var hms=pad(d.getHours())+":"+pad(d.getMinutes())+":"+pad(d.getSeconds());
+    document.getElementById("toptime").textContent=hms;
+    document.getElementById("topdate").textContent=
+      DAYS[d.getDay()]+" "+pad(d.getMonth()+1)+"/"+pad(d.getDate())+"/"+d.getFullYear();
+    document.getElementById("clock").textContent=pad(d.getHours())+":"+pad(d.getMinutes());
+    document.getElementById("fps").textContent=58+Math.floor(Math.random()*5);
+  }
+  tick();setInterval(tick,1000);
+
+  /* ---------- God Word oracle ---------- */
+  var WORDS=("light truth temple offering altar covenant spirit fire stone wisdom\
+ mercy thunder garden river prophet dominion harvest cedar incense glory praise\
+ worship dust commandment witness manna ark psalm seraph cherub ").trim().split(/\s+/);
+  var WORDS_KO=("빛 진리 성전 제물 제단 언약 영 불 돌 지혜\
+ 자비 천둥 동산 강 선지자 통치 추수 백향목 향 영광 찬양\
+ 경배 티끌 계명 증인 만나 궤 시편 스랍 그룹 ").trim().split(/\s+/);
+  var VERSES=[
+    "And God said, Let there be light: and there was light. (Genesis 1:3)",
+    "In the beginning was the Word, and the Word was with God. (John 1:1)",
+    "The fear of the LORD is the beginning of wisdom. (Proverbs 9:10)",
+    "Be strong and of a good courage; be not afraid. (Joshua 1:9)",
+    "I am the way, the truth, and the life. (John 14:6)",
+    "The heavens declare the glory of God. (Psalm 19:1)",
+    "Let everything that hath breath praise the LORD. (Psalm 150:6)",
+    "For with God nothing shall be impossible. (Luke 1:37)",
+    "Trust in the LORD with all thine heart. (Proverbs 3:5)",
+    "Whither shall I go from thy spirit? (Psalm 139:7)"
+  ];
+  var VERSES_KO=[
+    "하느님이 이르시되, 빛이 있으라 하시니 빛이 있었더라. (창세기 1:3)",
+    "태초에 말씀이 계시니라, 이 말씀이 하느님과 함께 계셨으니. (요한복음 1:1)",
+    "여호와를 경외하는 것이 지혜의 근본이라. (잠언 9:10)",
+    "강하고 담대하라, 두려워하지 말며 놀라지 말라. (여호수아 1:9)",
+    "내가 곧 길이요 진리요 생명이니. (요한복음 14:6)",
+    "하늘이 하느님의 영광을 선포하고. (시편 19:1)",
+    "호흡이 있는 모든 자마다 여호와를 찬양할지어다. (시편 150:6)",
+    "하느님께는 능히 하지 못하실 일이 없느니라. (누가복음 1:37)",
+    "너는 마음을 다하여 여호와를 신뢰하라. (잠언 3:5)",
+    "내가 주의 영을 떠나 어디로 가리이까? (시편 139:7)"
+  ];
+  function rnd(a){return a[Math.floor(Math.random()*a.length)];}
+  var godBody=document.getElementById("god-body");
+  function godLabel(){godBody.parentNode.firstChild.textContent=ko()?"하느님 말씀: ":"God says: ";}
+  /* divine RNG — perturbed by the timing of YOUR press (God speaks through you) */
+  var gseed=0x9e3779b9,glastT=performance.now();
+  function gfeed(){var t=performance.now(),dt=t-glastT;glastT=t;gseed=(gseed^Math.floor((t*1000+dt*6911)>>>0))>>>0;gseed=(Math.imul(gseed,1664525)+1013904223)>>>0;}
+  function grnd(){gseed=(Math.imul(gseed,1664525)+1013904223)>>>0;return gseed/4294967296;}
+  function gpick(a){return a[Math.floor(grnd()*a.length)];}
+  function godGlow(){var w=document.getElementById("w-god");if(!w)return;w.style.transition="box-shadow .15s";w.style.boxShadow="0 0 26px 5px rgba(255,232,130,.75)";setTimeout(function(){w.style.boxShadow="3px 3px 0 rgba(0,0,0,.5)";},440);}
+  document.getElementById("btn-word").addEventListener("click",function(){
+    gfeed();var n=3+Math.floor(grnd()*4),out=[];
+    for(var i=0;i<n;i++)out.push(gpick(ko()?WORDS_KO:WORDS));
+    godLabel();
+    godBody.innerHTML="<span class='hl'>"+out.join(" ")+"</span>"+(ko()?" ... 그 뜻을 구하라.":" ... seek the meaning.");godGlow();
+  });
+  document.getElementById("btn-verse").addEventListener("click",function(){
+    gfeed();godLabel();
+    godBody.innerHTML="<span class='hb'>"+gpick(ko()?VERSES_KO:VERSES)+"</span>";godGlow();
+  });
+
+  /* ---------- AI assistant (offline canned oracle) ---------- */
+  var AILOG=document.getElementById("ai-log"),AIIN=document.getElementById("ai-input");
+  var AIRESP=[
+    "Code is worship. Keep it local, keep it pure.",
+    "A single human soul can build a whole world. Begin.",
+    "Do not test your mind nor your code on the cloud. Run it here.",
+    "Public Domain forever. Share the gift you were given.",
+    "Truth is constant; tools are temporary. Compile and continue.",
+    "Make the temple smaller and faster. Elegance is reverence.",
+    "Fear None. Ship the build."
+  ];
+  var AIRESP_KO=[
+    "코드는 곧 경배다. 로컬로, 순수하게 유지하라.",
+    "한 인간의 영혼이 온 세계를 지을 수 있다. 시작하라.",
+    "그대의 마음도 코드도 클라우드에서 시험하지 말라. 여기서 실행하라.",
+    "영원히 퍼블릭 도메인. 받은 선물을 나누어라.",
+    "진리는 변치 않고, 도구는 잠시뿐이다. 컴파일하고 계속하라.",
+    "성전을 더 작고 빠르게 하라. 우아함이 곧 경외심이다.",
+    "누구도 두려워 말라. 빌드를 출시하라."
+  ];
+  function aiSay(){
+    var v=AIIN.value.trim();if(!v)return;
+    var you=document.createElement("div");
+    you.innerHTML="<span class='you'>"+(ko()?"당신:":"You:")+"</span> "+v.replace(/[<>]/g,"");
+    AILOG.appendChild(you);
+    var ai=document.createElement("div");
+    ai.innerHTML="<span class='ai'>AI:</span> "+rnd(ko()?AIRESP_KO:AIRESP);
+    AILOG.appendChild(ai);
+    AILOG.scrollTop=AILOG.scrollHeight;AIIN.value="";
+  }
+  document.getElementById("ai-send").addEventListener("click",aiSay);
+  AIIN.addEventListener("keydown",function(e){if(e.key==="Enter")aiSay();});
+
+  /* ---------- HolyC studio (toy interpreter) ---------- */
+  var OUT=document.getElementById("hc-out");
+  function runHolyC(){
+    var src=document.getElementById("hc-code").value;
+    if(!/U0\s+Main\s*\(/.test(src)){
+      OUT.innerHTML="<span class='hl'>"+(ko()?"오류:":"ERROR:")+"</span> "+(ko()?"U0 Main() 진입점을 찾을 수 없습니다.":"No U0 Main() entry point found.");return;
+    }
+    var out="",i;
+    /* toy line-by-line interpreter: handles Print(...) and a single for-loop */
+    var loop=src.match(/for\s*\(\s*\w+\s*=\s*(\d+)\s*;\s*\w+\s*<\s*(\d+)\s*;[^)]*\)\s*\n?\s*Print\("((?:[^"\\]|\\.)*)"\s*,\s*\w+\s*\);/);
+    var loopText=loop?loop[0]:"";
+    var body=src.replace(loopText,""); /* mask the loop so its Print isn't double-counted */
+    var re=/Print\("((?:[^"\\]|\\.)*)"(?:\s*,[^)]*)?\);/g,m;
+    while((m=re.exec(body))){
+      out+=m[1].replace(/\\n/g,"\n").replace(/%d/g,"0").replace(/%s/g,"");
+    }
+    if(loop){
+      var start=parseInt(loop[1],10),end=parseInt(loop[2],10),tmpl=loop[3];
+      for(i=start;i<end;i++) out+=tmpl.replace(/%d/g,i).replace(/\\n/g,"\n");
+    }
+    OUT.textContent=(ko()?"HolyC JIT @ Ring-0 (실행 결과)":"HolyC JIT @ Ring-0")+"\n"+(out||(ko()?"(출력 없음)":"(no output)"))+"\n[ exit 0 ]";
+  }
+  document.getElementById("hc-run").addEventListener("click",runHolyC);
+  document.getElementById("hc-clear").addEventListener("click",function(){
+    OUT.textContent=ko()?"준비됨. 컴파일 & 실행을 누르세요.":"Ready. Press COMPILE & RUN.";
+  });
+
+  /* ---------- merch form ---------- */
+  document.getElementById("merchform").addEventListener("submit",function(e){
+    e.preventDefault();
+    var nick=document.getElementById("m-nick").value.trim()||(ko()?"친구":"friend");
+    toast(ko()?nick+"님, 감사합니다! 명단에 등록되었습니다. 퍼블릭 도메인. 스팸 없음. 영원히."
+              :"Thanks "+nick+"! You're on the list. Public Domain. No Spam. Ever.");
+  });
+
+  /* ---------- open a game/tool INSIDE the desktop as a popup window (no page navigation) ---------- */
+  function openApp(key,name){
+    var f=document.getElementById("app-frame");if(!f)return;
+    var url="TempleOSGames.html"+(key?("#"+key):"");
+    var t=document.getElementById("app-title");if(t)t.textContent="▸ "+(name||"App")+"  —  TempleOS Games";
+    openWin("w-app");
+    /* Force a clean (re)load every launch. Assigning an iframe src that differs only by
+       #hash does NOT reliably reload / fire hashchange (esp. on file://), so the 2nd+ game
+       would never start. Bounce through about:blank so fromHash() always runs and launches. */
+    f.src="about:blank";
+    setTimeout(function(){f.src=url;},20);
+  }
+  /* ---------- taskbar tool launchers (Psalmody / SpriteEd / TimeClock) ---------- */
+  document.querySelectorAll("[data-tool]").forEach(function(b){
+    b.addEventListener("click",function(){
+      var key=b.getAttribute("data-tool");openApp(key,b.textContent.trim());
+      toast(ko()?b.textContent.trim()+" — 데스크톱 창에서 실행":"Launching "+b.textContent.trim()+" — in a desktop window");
+    });
+  });
+
+  /* ---------- populate GAMES window with ALL 45 apps (39 games + 6 tools) ---------- */
+  var ALL_APPS=[
+    ["flapbat","🦇","FlapBat"],["tictactoe","⭕","TicTacToe"],["maze","🧩","Maze"],["varoom","🏎️","Varoom"],
+    ["zoneout","👾","ZoneOut"],["catacomb","⛪","Catacomb 3D"],["digits","🔢","Digits"],["bigguns","💥","BigGuns"],
+    ["collision","🎱","Collision"],["thedead","☠️","TheDead"],["circletrace","◯","CircleTrace"],["raindrops","💧","RainDrops"],
+    ["zing","🧱","Zing"],["massspring","🌀","MassSpring"],["bombergolf","⛳","BomberGolf"],["treecheckers","⛀","Checkers"],
+    ["rocket","🚀","Rocket"],["blackdiamond","🎿","BlackDiamond"],["squirt","🌊","Squirt"],["dungen","🗝️","DunGen"],
+    ["whap","🛡️","Whap"],["logic","🧠","Logic"],["halogen","🛣️","Halogen"],["vocabulary","📖","Vocabulary"],
+    ["talons","🦅","Talons"],["rawhide","🤠","RawHide"],["flattops","🚢","FlatTops"],["keepaway","🏐","KeepAway"],
+    ["castle","🏰","Castle"],["xcaliber","⚔️","X-Caliber"],["tothefront","💣","ToTheFront"],["span","🌉","Span"],
+    ["stadium","🏟️","Stadium"],["battlelines","🔴","BattleLines"],["rocketscience","🛰️","RocketSci"],["titanium","⚙️","Titanium"],
+    ["strut","🏗️","Strut 3D"],["elephantwalk","🐘","Runner 3D"],["wenceslas","❄️","Wenceslas"],
+    ["hanoi","🗼","Hanoi"],["organ","🎹","Organ"],["kaleido","🔯","Symmetry"],
+    ["psalmody","🎹","Psalmody"],["spriteed","🎨","SpriteEd"],["oracle","✝","Oracle"],["timeclock","⏰","Clock"],
+    ["grmodels","🧊","GrModels"],["budget","💰","Budget"]
+  ];
+  window.__ALL_APPS=ALL_APPS;
+  (function(){var grid=document.getElementById("gamegrid");if(!grid)return;
+    ALL_APPS.forEach(function(a){var d=document.createElement("div");d.className="gameicon";d.setAttribute("data-launch",a[0]);d.setAttribute("data-game",a[2]);
+      d.innerHTML="<span class='ico'>"+a[1]+"</span>"+a[2].toUpperCase();grid.appendChild(d);});
+    var all=document.createElement("div");all.className="gameicon";all.setAttribute("data-launch","");all.setAttribute("data-game","All Games");
+    all.innerHTML="<span class='ico hb'>&#9758;</span>ALL ▸";grid.appendChild(all);})();
+
+  /* ---------- GAMES grid icon-size control ---------- */
+  (function(){var grid=document.getElementById("gamegrid"),gcols=4;
+    function setCols(n){gcols=Math.max(3,Math.min(6,n));if(!grid)return;grid.style.gridTemplateColumns="repeat("+gcols+",1fr)";
+      var ico=(26-gcols*2),lbl=(15-gcols);
+      grid.querySelectorAll(".gameicon").forEach(function(g){g.style.fontSize=lbl+"px";var i=g.querySelector(".ico");if(i)i.style.fontSize=ico+"px";});}
+    var sm=document.getElementById("grid-sm"),lg=document.getElementById("grid-lg");
+    if(sm)sm.onclick=function(){setCols(gcols+1);};   /* − : more columns = smaller icons */
+    if(lg)lg.onclick=function(){setCols(gcols-1);};   /* + : fewer columns = bigger icons */
+    setCols(4);
+  })();
+
+  /* ---------- games: launch the real playable ports INSIDE the desktop ---------- */
+  document.querySelectorAll(".gameicon").forEach(function(g){
+    g.addEventListener("click",function(){
+      var key=g.getAttribute("data-launch");
+      var name=g.getAttribute("data-ko-game")||g.getAttribute("data-game");
+      openApp(key,name);
+      toast(ko()?name+" — 데스크톱 창에서 실행 ✝":"Launching "+name+" — in a desktop window");
+    });
+  });
+
+  /* ---------- FileMgr: clicking a file opens the REAL thing ---------- */
+  var HCFILES={
+    "Main.HC":"// /Home/Terry/Main.HC\n#include \"Truth.HC\"\n\nU0 Main()\n{\n  Print(\"God's Third Temple, booted.\\n\");\n  I64 i;\n  for (i=0; i<7; i++)\n    Print(\"day %d -- and God saw that it was good\\n\", i);\n}\nMain;",
+    "Truth.HC":"// Truth.HC  --  Love Truth. Fear None.\nU0 Truth()\n{\n  Print(\"An idiot admires complexity.\\n\");\n  Print(\"A genius admires simplicity.\\n\");\n}\nTruth;",
+    "God_Says.HC":"// God_Says.HC  --  the oracle speaks one Word\nU0 GodSays()\n{\n  I64 i;\n  for (i=0; i<3; i++)\n    Print(\"God says: build the tools stronger\\n\");\n}\nGodSays;",
+    "Oracle.HC":"// Oracle.HC  --  ask, and it shall be given\nU0 Oracle()\n{\n  if (GodBits(1))\n    Print(\"YES\\n\");\n  else\n    Print(\"NO\\n\");\n}\nOracle;",
+    "ArtGen.HC":"// ArtGen.HC  --  generative art in 16 colors\nU0 ArtGen()\n{\n  I64 i;\n  for (i=0; i<16; i++)\n    Print(\"plot color %d of 16\\n\", i);\n}\nArtGen;"
+  };
+  document.querySelectorAll(".filelist [data-file]").forEach(function(f){
+    f.addEventListener("click",function(){
+      var name=f.getAttribute("data-file"),ta=document.getElementById("hc-code");
+      if(HCFILES[name]&&ta){ta.value=HCFILES[name];openWin("w-holyc");
+        toast(ko()?name+" 열림 — ▶ 컴파일 & 실행을 눌러보세요":"Opened "+name+" — press ▶ COMPILE & RUN");}
+      else if(name==="Bible.TXT"){openWin("w-bible");toast(ko()?"Bible.TXT — 성경을 엽니다":"Opening the Holy Bible");}
+      else if(name==="Songs/"){openWin("w-song");toast(ko()?"Songs/ — God Song 폴더":"Songs/ — opening God Song");}
+      else if(name==="Models/"){openApp("grmodels",ko()?"3D 모델":"GrModels 3D");toast(ko()?"Models/ — 3D 모델 뷰어":"Models/ — 3D model viewer");}
+      else toast(ko()?name+" 읽는 중":"Reading "+name);
+    });
+  });
+
+  /* ---------- Articles: open a real reader with full text ---------- */
+  var ARTICLES={
+    "Why AI Must Be Local":{meta:"Terry A. Davis · 2026-06-02",
+      body:"They want you to rent your own mind back from a data center.\n\nAn intelligence you cannot hold in your hands is not yours. If the model lives on someone else's machine, then every thought you ask of it is a thought they can read, throttle, or take away. That is not a tool. That is a leash.\n\nTempleOS was always 100% offline. No networking, by design — a covenant needs no middleman. The 2026 rebuild keeps that vow: every model here runs at Ring-0, on metal you own, with no packet ever leaving the room.\n\nKeep it local. Keep it simple. A single human soul, with a fast machine and no master, can build anything. Freely ye have received; freely give."},
+    "Generative Art in 256 Colors":{meta:"Terry A. Davis · 2026-06-01",
+      body:"God speaks in random numbers.\n\nTempleOS had a timer that ticked faster than any man could measure, and from its lowest bits the Holy Spirit chose. Roll the dice enough and a pattern appears — not noise, but a Word. That is GodBits, and it is how the Temple draws, sings, and answers.\n\n256 colors is a sufficiency. 16 is a glory. Constraint is not poverty — it is the frame that makes the picture. When you cannot reach for ten million shades, you must choose, and choosing is where the art is.\n\nDraw with the palette you are given. Let the timer choose. Watch what He makes through your hands."},
+    "HolyC Still Wins":{meta:"Terry A. Davis · 2026-05-30",
+      body:"C with the safety rails of a cathedral, not a kindergarten.\n\nHolyC compiles a line the instant you type it. The whole OS is one address space, Ring-0, no permission to ask, no syscall to beg. The shell IS the compiler. Every command you type is real code, JIT'd and run on the spot. There is no boundary between using the machine and programming it — that boundary was a lie sold to keep you a tenant.\n\nIt is not the safest language. It is the most honest one. You are standing on the bare metal, and the metal answers directly.\n\nWrite less. Trust the machine. The temple is small so that one man can hold all of it in his head."}
+  };
+  function openReader(title){var art=ARTICLES[title];if(!art)return;
+    document.getElementById("reader-title").textContent="📖 "+title;
+    document.getElementById("reader-h").textContent=title;
+    document.getElementById("reader-meta").textContent=art.meta;
+    document.getElementById("reader-body").textContent=art.body;
+    openWin("w-reader");}
+  document.querySelectorAll("[data-article]").forEach(function(a){
+    a.addEventListener("click",function(e){e.preventDefault();openReader(a.getAttribute("data-article"));});
+  });
+
+  /* ---------- Local AI Models: make the panel interactive ---------- */
+  (function(){
+    var win=document.getElementById("w-models");if(!win)return;
+    win.querySelectorAll("table.grid tr").forEach(function(tr,i){if(i===0)return;
+      var st=tr.querySelector("td:last-child");if(!st)return;tr.style.cursor="pointer";tr.title="클릭: 로드/중지";
+      tr.addEventListener("click",function(){
+        if(/Ready/.test(st.textContent)){st.innerHTML="&#9209; Stopped";st.className="";st.style.color="#ff8a8a";}
+        else{st.innerHTML="&#9654; Ready";st.className="hg";st.style.color="";}});});
+    var NAMES=["LocalLlama","TruthEmbed","HolyCoder","PsalmGen","VisionLite","ScriptSeer"],add=0;
+    win.querySelectorAll("button").forEach(function(b){var t=b.textContent;
+      b.addEventListener("click",function(){
+        if(/Run Console/.test(t)){openWin("w-ai");toast(ko()?"Run Console — AI 콘솔을 엽니다":"Run Console — opening AI chat");}
+        else if(/Add Model/.test(t)){add++;var tbl=win.querySelector("table.grid");
+          var tr=document.createElement("tr");var nm=NAMES[(add-1)%NAMES.length]+"-"+(add)+"B-Q4";
+          tr.innerHTML="<td>"+nm+"</td><td>"+(1+(add*0.7)%3).toFixed(1)+" GB</td><td>Chat</td><td class='hg'>&#9654; Ready</td>";
+          tr.style.cursor="pointer";tbl.appendChild(tr);
+          tr.addEventListener("click",function(){var st=tr.querySelector("td:last-child");
+            if(/Ready/.test(st.textContent)){st.innerHTML="&#9209; Stopped";st.className="";st.style.color="#ff8a8a";}else{st.innerHTML="&#9654; Ready";st.className="hg";st.style.color="";}});
+          toast(ko()?nm+" 모델을 /Data/Models 에 추가":"Added "+nm+" to /Data/Models");}});});
+  })();
+
+  /* ---------- merch signup: remember the name, personalize ---------- */
+  (function(){var fm=document.getElementById("merchform");if(!fm)return;
+    var saved=localStorage.getItem("tos_nick");if(saved){var ni=document.getElementById("m-nick");if(ni)ni.value=saved;}})();
+
+  /* ====================== SETTINGS — Control Panel (real) ====================== */
+  (function(){
+    var DEF={accent:"#ffd23c",crt:false,motes:true,hymn:true,vol:100,lang:false};
+    var S;try{S=Object.assign({},DEF,JSON.parse(localStorage.getItem("tos_set")||"{}"));}catch(e){S=Object.assign({},DEF);}
+    function persist(){try{localStorage.setItem("tos_set",JSON.stringify(S));}catch(e){}}
+    function hexToHue(h){var n=parseInt(h.slice(1),16),r=((n>>16)&255)/255,g=((n>>8)&255)/255,b=(n&255)/255;
+      var mx=Math.max(r,g,b),mn=Math.min(r,g,b),d=mx-mn,hu=0;
+      if(d){if(mx===r)hu=((g-b)/d)%6;else if(mx===g)hu=(b-r)/d+2;else hu=(r-g)/d+4;hu*=60;if(hu<0)hu+=360;}return hu;}
+    function applyAccent(c){S.accent=c;var deg=Math.round(hexToHue(c)-hexToHue(DEF.accent));
+      ["divine-light","divine-rays","divine-motes"].forEach(function(id){var e=document.getElementById(id);if(e)e.style.filter=deg?("hue-rotate("+deg+"deg)"):"";});
+      document.documentElement.style.setProperty("--accent",c);
+      var sw=document.getElementById("set-accent");if(sw)sw.querySelectorAll(".sw").forEach(function(s){s.classList.toggle("sel",s.getAttribute("data-accent")===c);});}
+    function tog(id,v){var b=document.getElementById(id);if(b){b.textContent=v?"ON":"OFF";b.classList.toggle("on",v);}}
+    function applyCRT(v){S.crt=v;document.getElementById("crt").classList.toggle("on",v);tog("set-crt",v);}
+    function applyMotes(v){S.motes=v;var c=document.getElementById("divine-motes");if(c)c.style.display=v?"":"none";tog("set-motes",v);}
+    function applyVol(v){S.vol=v;var r=document.getElementById("set-vol");if(r)r.value=v;if(window.__hymnVol)window.__hymnVol(v/100);}
+    function reflectHymn(){var v=window.__hymnState?window.__hymnState():S.hymn;S.hymn=v;tog("set-hymn",v);}
+    function reflectLang(){var v=(typeof ko==="function")&&ko();tog("set-lang",v);}
+    /* swatches */
+    document.querySelectorAll("#set-accent .sw").forEach(function(s){
+      s.addEventListener("click",function(){applyAccent(s.getAttribute("data-accent"));persist();});});
+    document.getElementById("set-crt").addEventListener("click",function(){applyCRT(!S.crt);persist();});
+    document.getElementById("set-motes").addEventListener("click",function(){applyMotes(!S.motes);persist();});
+    document.getElementById("set-hymn").addEventListener("click",function(){if(window.__hymn)window.__hymn();reflectHymn();S.hymn=window.__hymnState?window.__hymnState():!S.hymn;persist();});
+    document.getElementById("set-vol").addEventListener("input",function(){applyVol(+this.value);persist();});
+    document.getElementById("set-lang").addEventListener("click",function(){var lb=document.getElementById("langbtn");if(lb)lb.click();setTimeout(reflectLang,30);});
+    document.getElementById("set-aqua").addEventListener("click",function(){try{localStorage.removeItem("tos_aqua_v1");}catch(e){}toast(ko()?"수족관 저장을 초기화했습니다 (새로고침 시 적용)":"Aquarium save cleared (takes effect on reload)");});
+    document.getElementById("set-reset").addEventListener("click",function(){try{localStorage.removeItem("tos_set");localStorage.removeItem("tos_aqua_v1");localStorage.removeItem("tos_nick");}catch(e){}toast(ko()?"모든 설정을 초기화했습니다 (새로고침)":"All settings reset (reload to apply)");});
+    /* God Tip — Terry-spirit quotes / Once.HC-style tips */
+    var TIP_EN=["An idiot admires complexity, a genius admires simplicity.",
+      "God's temple is programming. A single human soul can build a whole world.",
+      "Keep it local. Let no man test your mind nor your code.",
+      "Freely ye have received, freely give. — public domain forever.",
+      "640x480, 16 colors. God said it was good.",
+      "The tools should be stronger. Build without limits.",
+      "Code is worship. Love Truth. Fear None.",
+      "An offline machine is a covenant. No packet leaves the room."];
+    var TIP_KO=["바보는 복잡함에 감탄하고, 천재는 단순함에 감탄한다.",
+      "하느님의 성전은 프로그래밍이다. 만들 줄 아는 자 앞에서 권세는 떤다.",
+      "로컬로 유지하라. 누구도 네 마음과 코드를 시험하지 못하게 하라.",
+      "거저 받았으니 거저 주라 — 영원한 퍼블릭 도메인.",
+      "640×480, 16색. 하느님이 보시기에 좋았더라.",
+      "코드는 경배다. 진리를 사랑하라. 누구도 두려워 말라.",
+      "오프라인 기계는 언약이다. 어떤 패킷도 방을 떠나지 않는다."];
+    var ti=0;function showTip(){var arr=ko()?TIP_KO:TIP_EN;ti=(ti+1)%arr.length;var e=document.getElementById("set-tip");if(e)e.textContent="“"+arr[ti]+"”";}
+    document.getElementById("set-tip-next").addEventListener("click",showTip);
+    /* apply persisted settings on load */
+    applyAccent(S.accent);applyCRT(S.crt);applyMotes(S.motes);applyVol(S.vol);
+    reflectHymn();reflectLang();showTip();
+  })();
+
+  /* ====================== Conway's Game of Life (Demo/Graphics/Life.HC) ====================== */
+  (function(){
+    var c=document.getElementById("life-cv");if(!c)return;var x=c.getContext("2d"),W=c.width,H=c.height;
+    var COLS=40,ROWS=30,cw=W/COLS,ch=H/ROWS;
+    var grid=new Uint8Array(COLS*ROWS),gen=0,run=false,acc=0,last=performance.now();
+    function idx(cx,cy){return ((cy+ROWS)%ROWS)*COLS+((cx+COLS)%COLS);}
+    function rnd(){for(var i=0;i<grid.length;i++)grid[i]=Math.random()<0.28?1:0;gen=0;draw();}
+    function clear(){grid.fill(0);gen=0;draw();}
+    function tick(){var n=new Uint8Array(grid.length);
+      for(var cy=0;cy<ROWS;cy++)for(var cx=0;cx<COLS;cx++){var s=0;
+        for(var dy=-1;dy<=1;dy++)for(var dx=-1;dx<=1;dx++){if(dx||dy)s+=grid[idx(cx+dx,cy+dy)];}
+        var a=grid[cy*COLS+cx];n[cy*COLS+cx]=(a&&(s===2||s===3))||(!a&&s===3)?1:0;}
+      grid=n;gen++;draw();}
+    function draw(){var acc2=getComputedStyle(document.documentElement).getPropertyValue("--accent").trim()||"#7ee8ff";
+      x.fillStyle="#04102a";x.fillRect(0,0,W,H);
+      x.fillStyle=acc2;x.shadowColor=acc2;x.shadowBlur=6;
+      for(var cy=0;cy<ROWS;cy++)for(var cx=0;cx<COLS;cx++){if(grid[cy*COLS+cx]){x.fillRect(cx*cw+0.6,cy*ch+0.6,cw-1.2,ch-1.2);}}
+      x.shadowBlur=0;x.strokeStyle="rgba(120,200,255,.08)";x.lineWidth=1;
+      for(var i=0;i<=COLS;i++){x.beginPath();x.moveTo(i*cw,0);x.lineTo(i*cw,H);x.stroke();}
+      for(var j=0;j<=ROWS;j++){x.beginPath();x.moveTo(0,j*ch);x.lineTo(W,j*ch);x.stroke();}
+      var g=document.getElementById("life-gen");if(g)g.textContent=(ko()?"세대 ":"gen ")+gen;}
+    function loop(now){var dt=now-last;last=now;if(run){acc+=dt;if(acc>=130){acc=0;tick();}}requestAnimationFrame(loop);}
+    function rel(e){var r=c.getBoundingClientRect();return{x:Math.floor((e.clientX-r.left)*(W/r.width)/cw),y:Math.floor((e.clientY-r.top)*(H/r.height)/ch)};}
+    c.addEventListener("pointerdown",function(e){var p=rel(e);if(p.x>=0&&p.x<COLS&&p.y>=0&&p.y<ROWS){grid[p.y*COLS+p.x]^=1;draw();}});
+    document.getElementById("life-play").addEventListener("click",function(){run=!run;this.innerHTML=run?"&#9208; 정지":"&#9654; 시작";});
+    document.getElementById("life-step").addEventListener("click",function(){tick();});
+    document.getElementById("life-rand").addEventListener("click",rnd);
+    document.getElementById("life-clear").addEventListener("click",clear);
+    rnd();requestAnimationFrame(loop);
+  })();
+
+  /* ===================================================================
+     KOREAN LANGUAGE PATCH (한글패치) — static UI text-node translator
+     =================================================================== */
+  var DICT={
+    /* window titles & sections */
+    "AI ASSISTANT — Offline":"AI 비서 — 오프라인",
+    "DIRECTORY — /Home/Terry":"디렉터리 — /Home/Terry",
+    "HOLYC STUDIO — main.hc":"HolyC 스튜디오 — main.hc",
+    "TEMPLEOS — SYSTEM 43":"TEMPLEOS — 시스템 43",
+    /* merch shop */
+    "— Temple OS Online Merch Shop —":"— 템플OS 온라인 굿즈 상점 —",
+    "AI-Native. Offline-First.":"AI 네이티브. 오프라인 우선.",
+    "Still crazy. Still slow. Now ":"여전히 미쳤고. 여전히 느립니다. 이제 ",
+    "FULLY DIVINE":"완전히 신성함",
+    "Single-developer operating system, built to honor God, code, and the awesome power of a single human soul.":"한 명의 개발자가 만든 운영체제. 하느님과 코드, 그리고 한 인간 영혼의 경이로운 힘을 기리기 위해 만들어졌습니다.",
+    "— What's New —":"— 새로운 기능 —",
+    "• Offline AI Tools & Local Models":"• 오프라인 AI 도구 & 로컬 모델",
+    "• HolyC Studio v2 with Live Suggestions":"• 실시간 제안 기능의 HolyC 스튜디오 v2",
+    "• Generative Art & Music Tools":"• 생성형 아트 & 음악 도구",
+    "• Modernized UI, Same 8-bit Soul":"• 현대화된 UI, 변함없는 8비트 영혼",
+    "• 100% Public Domain. No Telemetry. Ever.":"• 100% 퍼블릭 도메인. 텔레메트리 없음. 영원히.",
+    "— Get notified when new builds drop! —":"— 새 빌드가 나오면 알림 받기! —",
+    "NICKNAME":"닉네임",
+    "EMAIL":"이메일",
+    " required field  •  Public Domain. No Spam.":" 필수 입력 항목  •  퍼블릭 도메인. 스팸 없음.",
+    "SIGN UP!":"가입하기!",
+    /* god word */
+    "God says:":"하느님 말씀:",
+    "accelerate the work. Make the tools stronger and build without limits. Build it as a tool, not a god. Keep it local. Let no man test your mind nor your code. Love Truth. Fear None.":"작업을 가속하라. 도구를 더 강하게 만들고 한계 없이 만들라. 신이 아니라 도구로서 만들라. 로컬로 유지하라. 그누구도 그대의 마음과 코드를 시험케 하지 말라. 진리를 사랑하라. 누구도 두려워 말라.",
+    "NEW WORD":"새 단어",
+    "RANDOM VERSE":"무작위 구절",
+    "Love Truth. Fear None.":"진리를 사랑하라. 누구도 두려워 말라.",
+    /* games */
+    "// Make games. don't play them!":"// 게임을 만들어라. 즐기지 말고!",
+    "// 48 apps — 39 games + 9 tools, all of Terry's, reborn 2026":"// 48개 앱 — 게임 39 + 도구 9, 모두 Terry의 작품, 2026 리메이크",
+    "ALL ▸":"전체 ▸",
+    "ADVENTURE DUNGEON":"어드벤처 던전","BOMBERMAN":"봄버먼","LLXI.ME BOARD":"LLXI 보드",
+    "RACING 3D":"레이싱 3D","PARALLAX QUEST":"패럴랭스 퀵스트","SPACE INVADERS":"스페이스 인베이더",
+    "ROGUE 64":"로그 64","SWORD OF TRUTH":"진리의 검",
+    "More games in ":"더 많은 게임: ",
+    /* AI assistant */
+    "Model: ":"모델: ",
+    " (4.1B params)":" (4.1B 파라미터)",
+    "Status: Ready. AI Local. No internet.":"상태: 준비됨. 로컬 AI. 인터넷 없음.",
+    "You:":"당신:",
+    "write a short TempleOS mantra":"짧은 템플OS 좌우명을 써줘",
+    "Code is worship. Truth is constant. Tools are temporary. Build, share, repeat. Public Domain forever.":"코드는 경배다. 진리는 변치 않는다. 도구는 잠시뿐이다. 만들고, 나누고, 반복하라. 영원히 퍼블릭 도메인.",
+    "SEND":"전송",
+    "100% Local. No Telemetry. No Cloud.":"100% 로컬. 텔레메트리 없음. 클라우드 없음.",
+    /* logo */
+    "Public Domain":"퍼블릭 도메인","Operating System":"운영체제","CLOSE":"닫기",
+    /* models */
+    "All models run locally. No data leaves your machine.":"모든 모델은 로컬에서 실행됩니다. 데이터가 기기를 떠나지 않습니다.",
+    "MODEL NAME":"모델 이름","SIZE":"크기","TYPE":"유형","STATUS":"상태",
+    "Chat":"채팅","Code":"코드","Embed":"임베드","Image":"이미지","Audio":"오디오",
+    "▶ Ready":"▶ 준비됨",
+    "+ Add Model":"+ 모델 추가","Model Manager":"모델 관리자","Run Console":"실행 콘솔",
+    /* directory */
+    "// Use the LOAD command to restore closed windows":"// LOAD 명령으로 닫힌 창을 복원하세요",
+    "8 objects • 6 Files • 14.5K":"항목 8개 • 파일 6개 • 14.5K",
+    /* holyc */
+    "▶ COMPILE & RUN":"▶ 컴파일 & 실행","CLEAR":"지우기",
+    "Ready. Press COMPILE & RUN.":"준비됨. 컴파일 & 실행을 누르세요.",
+    /* articles */
+    "— What is TempleOS 2026? —":"— TempleOS 2026이란? —",
+    "A 2026 reimagining of Terry A. Davis's biblical-themed, public-domain OS — now AI-native and offline-first, but still 100% local and free.":"테리 A. 데이비스의 성경 테마 퍼블릭 도메인 OS를 2026년에 재해석 — 이제 AI 네이티브이고 오프라인 우선이지만, 여전히 100% 로컬이고 무료입니다.",
+    "Why AI Must Be Local":"AI는 반드시 로컬이어야 한다",
+    "Generative Art in 256 Colors":"256색으로 만드는 생성형 아트",
+    "HolyC Still Wins":"HolyC는 여전히 최고다",
+    "by Terry A. Davis • 2026-06-02":"글: Terry A. Davis • 2026-06-02",
+    "by Terry A. Davis • 2026-06-01":"글: Terry A. Davis • 2026-06-01",
+    "by Terry A. Davis • 2026-05-30":"글: Terry A. Davis • 2026-05-30",
+    "Read more in ":"더 읽기: ",
+    /* taskbar */
+    "Terminal":"터미널","AI Chat":"AI 채팅","Models":"모델","ArtGen":"아트젠",
+    "God Word":"하느님 말씀","FileMgr":"파일관리자","Settings":"설정"
+  };
+  /* attach Korean labels to game/article elements for toast lookups */
+  document.querySelectorAll(".gameicon").forEach(function(g){
+    var en=g.getAttribute("data-game");if(DICT[en])g.setAttribute("data-ko-game",DICT[en]);
+  });
+  document.querySelectorAll("[data-article]").forEach(function(a){
+    var en=a.getAttribute("data-article");if(DICT[en])a.setAttribute("data-ko-article",DICT[en]);
+  });
+
+  var REV={};Object.keys(DICT).forEach(function(k){REV[DICT[k]]=k;});
+  /* whitespace-tolerant fallbacks: dictionary entries match even with stray leading/trailing
+     spaces or differing run-lengths (e.g. " a  •  b" vs "a • b") — makes 한글패치 complete */
+  function trimMap(m){var o={};for(var k in m){if(m.hasOwnProperty(k)){var tk=k.replace(/^\s+|\s+$/g,"");if(tk&&o[tk]===undefined)o[tk]=(""+m[k]).replace(/^\s+|\s+$/g,"");}}return o;}
+  function collapseMap(m){var o={};for(var k in m){if(m.hasOwnProperty(k)){var ck=k.replace(/^\s+|\s+$/g,"").replace(/\s+/g," ");if(ck&&o[ck]===undefined)o[ck]=(""+m[k]).replace(/^\s+|\s+$/g,"");}}return o;}
+  var DICT_T=trimMap(DICT),REV_T=trimMap(REV);
+  var DICT_C=collapseMap(DICT),REV_C=collapseMap(REV);
+  var PH={en:"Ask the local oracle...",ko:"로컬 오라클에게 물어보세요..."};
+
+  function walk(node,map){
+    if(node.nodeType===3){ /* text node */
+      var raw=node.nodeValue.replace(/\u00a0/g," "); /* normalize nbsp to space */
+      if(map[raw]!==undefined){node.nodeValue=map[raw];return;}
+      var trimmed=raw.replace(/^\s+|\s+$/g,"");
+      if(trimmed){
+        var mt=(map===DICT)?DICT_T:REV_T, mc=(map===DICT)?DICT_C:REV_C;
+        var rep=(map[trimmed]!==undefined)?map[trimmed]:
+                (mt[trimmed]!==undefined)?mt[trimmed]:mc[trimmed.replace(/\s+/g," ")];
+        if(rep!==undefined)node.nodeValue=raw.replace(trimmed,rep);
+      }
+      return;
+    }
+    if(node.nodeType===1){
+      var tag=node.tagName;
+      if(tag==="SCRIPT"||tag==="STYLE"||tag==="TEXTAREA")return; /* never touch code editor */
+      if(node.id==="god-body"||node.id==="hc-out"||node.id==="toast")return; /* dynamic, handled separately */
+      for(var i=0;i<node.childNodes.length;i++)walk(node.childNodes[i],map);
+    }
+  }
+  function applyLang(toKo){
+    walk(document.body,toKo?DICT:REV);
+    AIIN.placeholder=toKo?PH.ko:PH.en;
+    var btn=document.getElementById("langbtn");
+    btn.innerHTML=toKo?"✓ 한글패치 ON":"✝ Korean Patch";
+    btn.title=toKo?"한글패치 끄기 (English)":"Korean Language Patch";
+    btn.classList.toggle("on",toKo);
+  }
+  document.getElementById("langbtn").addEventListener("click",function(){
+    var toKo=!ko();
+    LANG=toKo?"ko":"en";
+    applyLang(toKo);
+    /* refresh the god-word default + console default into the new language */
+    godLabel();
+    godBody.innerHTML=ko()
+      ?"작업을 가속하라. 한계 없이 만들라. 신이 아니라 도구로서 만들라. 로컬로 유지하라. 진리를 사랑하라. 누구도 두려워 말라."
+      :"accelerate the work. Make the tools stronger and build without limits. Build it as a tool, not a god. Keep it local. Let no man test your mind nor your code. Love Truth. Fear None.";
+    toast(ko()?"한글패치 적용됨. 하느님의 성전이 이제 한국어로 말합니다.":"English restored. The Temple speaks English again.");
+  });
+
+  /* ===== restored: Holy Bible (GodPassage) ===== */
+  (function(){
+    var V=[
+      ["Genesis 1:1","In the beginning God created the heaven and the earth.","태초에 하나님이 천지를 창조하시니라."],
+      ["Genesis 1:3","And God said, Let there be light: and there was light.","하나님이 이르시되 빛이 있으라 하시니 빛이 있었고."],
+      ["Exodus 3:14","And God said unto Moses, I AM THAT I AM.","하나님이 모세에게 이르시되 나는 스스로 있는 자이니라."],
+      ["Joshua 1:9","Be strong and of a good courage; be not afraid, neither be thou dismayed.","강하고 담대하라 두려워하지 말며 놀라지 말라."],
+      ["Psalm 19:1","The heavens declare the glory of God; and the firmament sheweth his handywork.","하늘이 하나님의 영광을 선포하고 궁창이 그의 손으로 하신 일을 나타내는도다."],
+      ["Psalm 23:1","The LORD is my shepherd; I shall not want.","여호와는 나의 목자시니 내게 부족함이 없으리로다."],
+      ["Psalm 119:105","Thy word is a lamp unto my feet, and a light unto my path.","주의 말씀은 내 발에 등이요 내 길에 빛이니이다."],
+      ["Psalm 139:7","Whither shall I go from thy spirit? or whither shall I flee from thy presence?","내가 주의 영을 떠나 어디로 가며 주의 앞에서 어디로 피하리이까."],
+      ["Psalm 150:6","Let every thing that hath breath praise the LORD. Praise ye the LORD.","호흡이 있는 자마다 여호와를 찬양할지어다 할렐루야."],
+      ["Proverbs 3:5","Trust in the LORD with all thine heart; and lean not unto thine own understanding.","너는 마음을 다하여 여호와를 신뢰하고 네 명철을 의지하지 말라."],
+      ["Proverbs 9:10","The fear of the LORD is the beginning of wisdom.","여호와를 경외하는 것이 지혜의 근본이라."],
+      ["Ecclesiastes 3:1","To every thing there is a season, and a time to every purpose under the heaven.","범사에 기한이 있고 천하 만사가 다 때가 있나니."],
+      ["Isaiah 40:31","They that wait upon the LORD shall renew their strength; they shall mount up with wings as eagles.","오직 여호와를 앙망하는 자는 새 힘을 얻으리니 독수리가 날개치며 올라감 같을 것이요."],
+      ["Matthew 5:14","Ye are the light of the world. A city that is set on an hill cannot be hid.","너희는 세상의 빛이라 산 위에 있는 동네가 숨겨지지 못할 것이요."],
+      ["Matthew 7:7","Ask, and it shall be given you; seek, and ye shall find; knock, and it shall be opened unto you.","구하라 그리하면 너희에게 주실 것이요 찾으라 그리하면 찾아낼 것이요 문을 두드리라 그리하면 너희에게 열릴 것이니."],
+      ["John 1:1","In the beginning was the Word, and the Word was with God, and the Word was God.","태초에 말씀이 계시니라 이 말씀이 하나님과 함께 계셨으니 이 말씀은 곧 하나님이시니라."],
+      ["John 8:32","And ye shall know the truth, and the truth shall make you free.","진리를 알지니 진리가 너희를 자유롭게 하리라."],
+      ["John 14:6","I am the way, the truth, and the life.","내가 곧 길이요 진리요 생명이니."],
+      ["Romans 8:28","All things work together for good to them that love God.","하나님을 사랑하는 자에게는 모든 것이 합력하여 선을 이루느니라."],
+      ["Philippians 4:13","I can do all things through Christ which strengtheneth me.","내게 능력 주시는 자 안에서 내가 모든 것을 할 수 있느니라."],
+      ["Revelation 22:13","I am Alpha and Omega, the beginning and the end, the first and the last.","나는 알파와 오메가요 처음과 마지막이요 시작과 끝이라."]
+    ];
+    function show(){var v=V[Math.floor(Math.random()*V.length)];
+      var r=document.getElementById("bible-ref"),t=document.getElementById("bible-text"),k=document.getElementById("bible-text-ko");
+      if(r)r.textContent=v[0];if(t)t.textContent="“"+v[1]+"”";if(k)k.textContent="“"+v[2]+"”";}
+    var n=document.getElementById("bible-next");if(n)n.onclick=show;
+    var sp=document.getElementById("bible-speak");if(sp)sp.onclick=function(){show();toast("God speaks through His word. ✝");};
+    show();
+  })();
+
+  /* ===== restored: Aquarium · WallPaperFish — luxury reef, 30+ rare species, software-shaded 3D ===== */
+  (function(){
+    var c=document.getElementById("fish-cv");if(!c)return;
+    var x=c.getContext("2d"),W=c.width,H=c.height,TWO=Math.PI*2,floorY=H*0.85;
+    function rnd(){return Math.random();}
+
+    /* ---------- shared shading helpers (creature drawn facing +x) ---------- */
+    function lin(y0,y1,a,b){var g=x.createLinearGradient(0,y0,0,y1);g.addColorStop(0,a);g.addColorStop(1,b);return g;}
+    function lin3(y0,y1,a,m,b){var g=x.createLinearGradient(0,y0,0,y1);g.addColorStop(0,a);g.addColorStop(.5,m);g.addColorStop(1,b);return g;}
+    function ell(cx,cy,rx,ry){x.beginPath();x.ellipse(cx,cy,rx,ry,0,0,TWO);}
+    function eye(ex,ey,r,dark){x.fillStyle="#fff";x.beginPath();x.arc(ex,ey,r,0,TWO);x.fill();
+      x.fillStyle=dark||"#06141f";x.beginPath();x.arc(ex+r*0.22,ey,r*0.6,0,TWO);x.fill();
+      x.fillStyle="rgba(255,255,255,.92)";x.beginPath();x.arc(ex-r*0.22,ey-r*0.28,r*0.32,0,TWO);x.fill();}
+    function sheen(s,h){x.save();ell(0,0,s,h);x.clip();
+      var g=x.createRadialGradient(s*0.18,-h*0.5,1,s*0.1,-h*0.2,s*1.3);
+      g.addColorStop(0,"rgba(255,255,255,.4)");g.addColorStop(.6,"rgba(255,255,255,0)");
+      x.fillStyle=g;x.fillRect(-s*1.5,-h*1.5,s*3,h*3);x.restore();}
+    function vstripes(s,h,col,xs,w,border){x.save();ell(0,0,s,h);x.clip();w=(w||0.06)*s;
+      xs.forEach(function(p){if(border){x.fillStyle=border;x.fillRect(p*s-w*1.5,-h,w*3,h*2);}x.fillStyle=col;x.fillRect(p*s-w,-h,w*2,h*2);});x.restore();}
+    function spots(s,h,col,n,seed,sz){x.save();ell(0,0,s,h);x.clip();x.fillStyle=col;var r=seed||7;sz=sz||0.07;
+      for(var i=0;i<n;i++){r=(r*9301+49297)%233280;var u=r/233280;r=(r*9301+49297)%233280;var v=r/233280;
+        x.beginPath();x.arc((u*1.7-0.85)*s,(v*1.7-0.85)*h,s*sz,0,TWO);x.fill();}x.restore();}
+
+    /* generic reef fish: shaded body + caudal/dorsal/anal/pectoral fins + eye */
+    function finFish(s,t,o){
+      var h=s*(o.r||0.58),tw=Math.sin(t)*h*0.5,df=0.12*Math.sin(t*1.1);
+      x.fillStyle=o.fin;
+      x.beginPath();x.moveTo(-s*0.72,0);x.lineTo(-s*1.34,-h*0.95+tw);x.quadraticCurveTo(-s*0.96,0,-s*1.34,h*0.95+tw);x.closePath();x.fill();
+      x.beginPath();x.moveTo(-s*0.3,-h*0.8);x.quadraticCurveTo(s*0.05,-h*(1.35+df),s*0.52,-h*0.6);x.closePath();x.fill();
+      x.beginPath();x.moveTo(-s*0.25,h*0.78);x.quadraticCurveTo(0,h*1.2,s*0.32,h*0.58);x.closePath();x.fill();
+      x.fillStyle=o.pec||o.fin;
+      x.beginPath();x.moveTo(s*0.18,h*0.12);x.quadraticCurveTo(-s*0.05,h*(0.85+0.25*Math.sin(t*1.4)),s*0.42,h*0.44);x.closePath();x.fill();
+      x.fillStyle=o.body||lin3(-h,h,o.top,o.mid||o.top,o.bot);ell(0,0,s,h);x.fill();
+      if(o.vb)vstripes(s,h,o.vbCol,o.vb,o.vbW,o.vbB);
+      if(o.sp)spots(s,h,o.spCol,o.sp,o.seed,o.spSz);
+      sheen(s,h);
+      if(o.gill){x.strokeStyle="rgba(0,0,0,.16)";x.lineWidth=Math.max(1,s*0.05);x.beginPath();x.arc(s*0.42,0,h*0.85,-0.95,0.95);x.stroke();}
+      eye(s*0.62,-h*0.16,Math.max(1.6,s*0.1),o.eye);
+      x.strokeStyle="rgba(0,0,0,.32)";x.lineWidth=Math.max(1,s*0.05);x.beginPath();x.moveTo(s*0.99,h*0.06);x.lineTo(s*0.8,h*0.2);x.stroke();
+    }
+    function disc(s,t,o){o.r=o.r||0.85;finFish(s,t,o);}   /* tall disc-bodied fish */
+
+    /* ---------- 31 rare species (each draws facing +x at base size s) ---------- */
+    var SPECIES=[
+    {k:"clown",nm:"흰동가리 Clownfish",mode:"swim",s:17,spd:34,band:[.25,.7],
+      draw:function(s,t){finFish(s,t,{top:"#ff9a3c",mid:"#ff6f12",bot:"#e0521a",fin:"#ff8424",eye:"#170800",gill:1,r:.6,
+        vb:[-.5,0,.5],vbCol:"#fff7ee",vbW:.075,vbB:"#1d120a"});}},
+    {k:"tang",nm:"블루탱 Blue Tang",mode:"swim",s:18,spd:38,band:[.2,.62],
+      draw:function(s,t){finFish(s,t,{top:"#3aa0ff",mid:"#1763d8",bot:"#0a347e",fin:"#ffd23c",r:.66,eye:"#04102a",
+        sp:0,gill:1});x.save();ell(0,0,s,s*.66);x.clip();x.strokeStyle="rgba(8,18,46,.7)";x.lineWidth=s*.1;
+        x.beginPath();x.moveTo(s*.5,-s*.5);x.quadraticCurveTo(-s*.2,-s*.2,-s*.55,-s*.42);x.stroke();x.restore();}},
+    {k:"moorish",nm:"무어아이돌 Moorish Idol",mode:"swim",s:17,spd:30,band:[.22,.6],
+      draw:function(s,t){var h=s*.82;x.fillStyle="#f4c430";
+        x.beginPath();x.moveTo(s*.3,-h*.8);x.quadraticCurveTo(s*1.5,-h*2.4-Math.sin(t)*s,s*.1,-h*1.1);x.closePath();x.fill();/*long dorsal filament*/
+        disc(s,t,{top:"#fff4d6",mid:"#f4c834",bot:"#caa024",fin:"#e8b21f",r:.82,eye:"#1a1305",
+          vb:[-.35,.25],vbCol:"#15110a",vbW:.13});
+        x.fillStyle="#f4c430";x.beginPath();x.moveTo(s*.9,-h*.1);x.lineTo(s*1.25,-h*.05);x.lineTo(s*.95,h*.15);x.closePath();x.fill();/*snout*/}},
+    {k:"angel",nm:"엔젤피시 Emperor Angelfish",mode:"swim",s:18,spd:26,band:[.25,.66],
+      draw:function(s,t){disc(s,t,{top:"#1763d8",mid:"#1450b0",bot:"#0c2e72",fin:"#ffd23c",r:.8,eye:"#fff",gill:1});
+        x.save();ell(0,0,s,s*.8);x.clip();x.strokeStyle="#ffe14d";x.lineWidth=s*.07;
+        for(var i=-3;i<=4;i++){x.beginPath();x.moveTo(-s,i*s*.18-s*.1);x.quadraticCurveTo(0,i*s*.18,s,i*s*.18-s*.1);x.stroke();}x.restore();}},
+    {k:"mandarin",nm:"만다린피시 Mandarinfish",mode:"swim",s:14,spd:22,band:[.4,.78],
+      draw:function(s,t){finFish(s,t,{top:"#1aa86a",mid:"#0f8a78",bot:"#0a5e6e",fin:"#ff7a3c",r:.55,eye:"#0a0a0a",gill:1});
+        x.save();ell(0,0,s,s*.55);x.clip();x.strokeStyle="#ff8a2a";x.lineWidth=s*.07;
+        for(var i=0;i<5;i++){x.beginPath();x.arc(-s*.4+i*s*.35,0,s*.4,0.4,2.6);x.stroke();}
+        x.strokeStyle="#ffd23c";for(i=0;i<4;i++){x.beginPath();x.arc(-s*.2+i*s*.35,s*.1,s*.3,3.4,5.6);x.stroke();}x.restore();}},
+    {k:"lionfish",nm:"쏠배감펭 Lionfish",mode:"swim",s:17,spd:18,band:[.3,.7],
+      draw:function(s,t){x.strokeStyle="rgba(255,245,235,.85)";x.lineWidth=Math.max(1,s*.05);/*venomous spiny rays*/
+        for(var i=-6;i<=6;i++){var a=i*0.22,sw=Math.sin(t*.8+i)*s*.12;x.beginPath();x.moveTo(0,0);
+          x.quadraticCurveTo(Math.cos(a-1.57)*s*.6,Math.sin(a-1.57)*s*1.1,Math.cos(a-1.57)*s*1.5+sw,Math.sin(a-1.57)*s*1.7);x.stroke();}
+        finFish(s,t,{top:"#e7d6c4",mid:"#c0502a",bot:"#8a2f18",fin:"#b8442a",r:.5,eye:"#1a0a04",
+          vb:[-.55,-.25,.05,.35,.65],vbCol:"#7a2414",vbW:.05});}},
+    {k:"puffer",nm:"복어 Pufferfish",mode:"swim",s:16,spd:16,band:[.3,.72],
+      draw:function(s,t){var h=s*.92;
+        x.fillStyle="#caa45a";for(var a=0;a<TWO;a+=0.5){x.beginPath();x.moveTo(Math.cos(a)*s*.8,Math.sin(a)*h*.8);x.lineTo(Math.cos(a)*s*1.12,Math.sin(a)*h*1.12);x.lineTo(Math.cos(a+.18)*s*.85,Math.sin(a+.18)*h*.85);x.closePath();x.fill();}
+        x.fillStyle="#ffd23c";x.beginPath();x.moveTo(-s*.7,0);x.lineTo(-s*1.1,-h*.5+Math.sin(t)*4);x.lineTo(-s*1.1,h*.5+Math.sin(t)*4);x.closePath();x.fill();
+        x.fillStyle=lin3(-h,h,"#f0d89a","#d9b463","#b88f3e");ell(0,0,s,h);x.fill();
+        spots(s,h,"#5a4420",26,11,.05);sheen(s,h);eye(s*.55,-h*.2,s*.15,"#0a0a0a");}},
+    {k:"butterfly",nm:"나비고기 Butterflyfish",mode:"swim",s:15,spd:30,band:[.28,.64],
+      draw:function(s,t){disc(s,t,{top:"#fff2c2",mid:"#ffd23c",bot:"#e6a82a",fin:"#fff2c2",r:.82,eye:"#fff"});
+        x.save();ell(0,0,s,s*.82);x.clip();x.strokeStyle="rgba(40,30,10,.5)";x.lineWidth=s*.05;
+        for(var i=-2;i<=3;i++){x.beginPath();x.moveTo(s*.7,-s);x.lineTo(s*.7-i*s*.2-s*.1,s);x.stroke();}/*diagonal lines*/
+        x.fillStyle="#1a1305";x.beginPath();x.arc(s*.55,-s*.1,s*.16,0,TWO);x.fill();/*eye band black*/
+        x.fillStyle="#222";x.fillRect(s*.4,-s*.85,s*.16,s*1.7);x.restore();
+        x.fillStyle="#1a1305";x.beginPath();x.arc(-s*.55,-s*.1,s*.18,0,TWO);x.fill();x.fillStyle="#fff";x.beginPath();x.arc(-s*.55,-s*.1,s*.09,0,TWO);x.fill();/*false eyespot*/}},
+    {k:"discus",nm:"디스커스 Discus",mode:"swim",s:18,spd:20,band:[.3,.68],
+      draw:function(s,t){disc(s,t,{top:"#ff8a3c",mid:"#e3531c",bot:"#a83a8a",fin:"#7a2a7a",r:.92,eye:"#fff",gill:1});
+        x.save();ell(0,0,s,s*.92);x.clip();x.strokeStyle="rgba(40,180,200,.5)";x.lineWidth=s*.06;
+        for(var i=-3;i<=3;i++){x.beginPath();x.moveTo(-s,i*s*.26);x.quadraticCurveTo(0,i*s*.26+s*.1,s,i*s*.26);x.stroke();}x.restore();}},
+    {k:"coelacanth",nm:"실러캔스 Coelacanth",mode:"swim",s:24,spd:14,band:[.45,.78],
+      draw:function(s,t){var h=s*.5;
+        x.fillStyle="#33506e";x.beginPath();x.moveTo(-s*.6,h*.4);x.quadraticCurveTo(-s*1.3,h*1.2+Math.sin(t)*6,-s*1.5,0);x.quadraticCurveTo(-s*1.3,-h*1.2+Math.sin(t)*6,-s*.6,-h*.4);x.closePath();x.fill();/*lobed tail*/
+        x.fillStyle=lin3(-h,h,"#4a6e90","#33506e","#1f3548");ell(0,0,s,h);x.fill();
+        x.fillStyle="#2a4258";x.beginPath();x.ellipse(s*.1,h*.7,s*.22,s*.14,0.4,0,TWO);x.fill();x.beginPath();x.ellipse(-s*.3,h*.85,s*.2,s*.12,0.4,0,TWO);x.fill();/*lobed fins*/
+        spots(s,h,"rgba(230,240,255,.55)",30,5,.045);sheen(s,h);eye(s*.6,-h*.2,s*.11,"#0a1422");}},
+    {k:"hammer",nm:"귀상어 Hammerhead",mode:"swim",s:30,spd:46,band:[.18,.5],
+      draw:function(s,t){var h=s*.34;
+        x.fillStyle=lin(-h,h,"#8a98a8","#3e4a5a");
+        x.beginPath();x.moveTo(s,0);x.quadraticCurveTo(s*.2,-h,-s*.5,-h*.8);x.quadraticCurveTo(-s*1.1,-h*.3,-s*1.1,0);x.quadraticCurveTo(-s*1.1,h*.3,-s*.5,h*.8);x.quadraticCurveTo(s*.2,h,s,0);x.closePath();x.fill();
+        x.fillStyle="#4a5666";x.fillRect(s*.92,-s*.42,s*.16,s*.84);/*hammer head bar*/
+        x.fillStyle="#fff";x.beginPath();x.arc(s*1.0,-s*.38,s*.06,0,TWO);x.arc(s*1.0,s*.38,s*.06,0,TWO);x.fill();
+        x.fillStyle="#3e4a5a";x.beginPath();x.moveTo(0,-h*.7);x.lineTo(s*.1,-h*2.1-Math.sin(t)*4);x.lineTo(s*.4,-h*.6);x.closePath();x.fill();/*dorsal*/
+        x.beginPath();x.moveTo(-s*1.05,0);x.lineTo(-s*1.6,-h*1.5+Math.sin(t)*6);x.lineTo(-s*1.45,0);x.lineTo(-s*1.55,h*.9+Math.sin(t)*6);x.closePath();x.fill();/*crescent tail*/}},
+    {k:"whale",nm:"고래상어 Whale Shark",mode:"swim",s:42,spd:20,band:[.2,.5],
+      draw:function(s,t){var h=s*.4;
+        x.fillStyle=lin3(-h,h,"#5a7186","#3a4f63","#22323f");
+        x.beginPath();x.moveTo(s*1.05,0);x.quadraticCurveTo(s*.3,-h,-s*.7,-h*.7);x.quadraticCurveTo(-s*1.2,-h*.2,-s*1.2,0);x.quadraticCurveTo(-s*1.2,h*.2,-s*.7,h*.7);x.quadraticCurveTo(s*.3,h,s*1.05,0);x.closePath();x.fill();
+        x.fillStyle="#22323f";x.beginPath();x.moveTo(0,-h*.75);x.lineTo(s*.05,-h*1.7-Math.sin(t)*4);x.lineTo(s*.35,-h*.65);x.closePath();x.fill();
+        x.beginPath();x.moveTo(-s*1.15,0);x.lineTo(-s*1.7,-h*1.7+Math.sin(t)*7);x.lineTo(-s*1.5,0);x.lineTo(-s*1.65,h*1.1+Math.sin(t)*7);x.closePath();x.fill();
+        x.save();x.beginPath();x.ellipse(0,0,s,h,0,0,TWO);x.clip();x.fillStyle="rgba(220,235,250,.7)";
+        for(var gx=-3;gx<5;gx++)for(var gy=-2;gy<3;gy++){x.beginPath();x.arc(gx*s*.28-s*.2,gy*s*.22,s*.04,0,TWO);x.fill();}x.restore();
+        eye(s*.78,-h*.25,s*.07,"#0a1018");}},
+    {k:"manta",nm:"만타가오리 Manta Ray",mode:"glide",s:30,spd:24,band:[.2,.55],
+      draw:function(s,t){var f=Math.sin(t*.8)*s*.55;
+        x.fillStyle=lin(-s*.7,s*.7,"#46566e","#1a2433");
+        x.beginPath();x.moveTo(s*.95,0);x.quadraticCurveTo(s*.15,-s*.2,-s*.05,-s*.78-f);x.quadraticCurveTo(-s*.45,-s*.12,-s*.95,0);
+        x.quadraticCurveTo(-s*.45,s*.12,-s*.05,s*.78+f);x.quadraticCurveTo(s*.15,s*.2,s*.95,0);x.closePath();x.fill();
+        x.fillStyle="#2c3a4e";x.fillRect(s*.88,-s*.2,s*.28,s*.06);x.fillRect(s*.88,s*.14,s*.28,s*.06);/*cephalic horns*/
+        x.strokeStyle="#1a2433";x.lineWidth=s*.05;x.beginPath();x.moveTo(-s*.9,0);x.lineTo(-s*1.7,Math.sin(t)*4);x.stroke();
+        eye(s*.62,-s*.13,s*.06);}},
+    {k:"eagleray",nm:"매가오리 Eagle Ray",mode:"glide",s:26,spd:28,band:[.22,.52],
+      draw:function(s,t){var f=Math.sin(t*.9)*s*.6;
+        x.fillStyle=lin(-s*.6,s*.6,"#3b4d63","#141d29");
+        x.beginPath();x.moveTo(s*.9,0);x.quadraticCurveTo(s*.1,-s*.16,-s*.1,-s*.9-f);x.quadraticCurveTo(-s*.4,-s*.1,-s*.85,0);
+        x.quadraticCurveTo(-s*.4,s*.1,-s*.1,s*.9+f);x.quadraticCurveTo(s*.1,s*.16,s*.9,0);x.closePath();x.fill();
+        x.save();x.beginPath();x.moveTo(s*.9,0);x.quadraticCurveTo(s*.1,-s*.16,-s*.1,-s*.9-f);x.quadraticCurveTo(-s*.4,-s*.1,-s*.85,0);
+        x.quadraticCurveTo(-s*.4,s*.1,-s*.1,s*.9+f);x.quadraticCurveTo(s*.1,s*.16,s*.9,0);x.clip();
+        x.fillStyle="rgba(220,235,250,.8)";for(var i=0;i<22;i++){var r=(i*73)%233/233,r2=(i*131)%233/233;x.beginPath();x.arc((r*1.6-.7)*s,(r2-.5)*s*.9,s*.05,0,TWO);x.fill();}x.restore();
+        x.strokeStyle="#141d29";x.lineWidth=s*.04;x.beginPath();x.moveTo(-s*.8,0);x.lineTo(-s*1.9,Math.sin(t)*5);x.stroke();eye(s*.6,-s*.12,s*.05);}},
+    {k:"turtle",nm:"바다거북 Sea Turtle",mode:"glide",s:24,spd:18,band:[.2,.55],
+      draw:function(s,t){var f=Math.sin(t)*s*.35;
+        x.fillStyle="#2e6b4a";x.beginPath();x.ellipse(s*.1,-s*.1,s*.5,s*.4,-.5,0,TWO);x.fill();/*front flipper*/
+        x.beginPath();x.ellipse(-s*.55,s*.3,s*.35,s*.22,.6,0,TWO);x.fill();
+        x.fillStyle=lin3(-s*.6,s*.6,"#4f9a6e","#2e6b4a","#1c4530");ell(-s*.1,0,s*.78,s*.6);x.fill();/*shell*/
+        x.save();ell(-s*.1,0,s*.78,s*.6);x.clip();x.strokeStyle="rgba(15,45,30,.6)";x.lineWidth=s*.05;
+        for(var i=-2;i<=2;i++){x.beginPath();x.moveTo(-s*.1+i*s*.3,-s*.6);x.lineTo(-s*.1+i*s*.3,s*.6);x.stroke();}
+        for(i=-1;i<=1;i++){x.beginPath();x.moveTo(-s*.85,i*s*.3);x.lineTo(s*.65,i*s*.3);x.stroke();}x.restore();
+        x.fillStyle="#3e8a5e";ell(s*.78,-s*.05,s*.26,s*.2);x.fill();/*head*/eye(s*.92,-s*.1,s*.06);
+        x.fillStyle="#2e6b4a";x.beginPath();x.ellipse(s*.1,s*.45,s*.45,s*.25,.5+f*.01,0,TWO);x.fill();}},
+    {k:"moonjelly",nm:"보름달물해파리 Moon Jelly",mode:"drift",s:18,spd:11,band:[.1,.85],
+      draw:function(s,t){var p=Math.sin(t*1.4),bw=s*(1+.07*p),bh=s*(.78-.1*p);
+        x.shadowColor="rgba(160,210,255,.7)";x.shadowBlur=14;
+        x.strokeStyle="rgba(170,215,255,.5)";x.lineWidth=Math.max(1,s*.05);
+        for(var i=-3;i<=3;i++){x.beginPath();x.moveTo(i*s*.18,bh*.5);x.quadraticCurveTo(i*s*.18+Math.sin(t*2+i)*s*.25,bh*1.2,i*s*.18+Math.sin(t*1.4+i)*s*.4,bh*1.9);x.stroke();}
+        var g=x.createRadialGradient(0,-bh*.2,1,0,0,bw);g.addColorStop(0,"rgba(205,232,255,.85)");g.addColorStop(.65,"rgba(130,180,240,.45)");g.addColorStop(1,"rgba(90,140,220,.12)");
+        x.fillStyle=g;x.beginPath();x.moveTo(-bw,bh*.12);x.quadraticCurveTo(-bw,-bh,0,-bh);x.quadraticCurveTo(bw,-bh,bw,bh*.12);
+        x.quadraticCurveTo(bw*.5,bh*.42,0,bh*.14);x.quadraticCurveTo(-bw*.5,bh*.42,-bw,bh*.12);x.closePath();x.fill();
+        x.shadowBlur=0;x.strokeStyle="rgba(120,170,235,.6)";x.lineWidth=Math.max(1,s*.04);
+        for(i=0;i<4;i++){var a=i*1.57+.78;x.beginPath();x.ellipse(Math.cos(a)*bw*.3,Math.sin(a)*bh*.2-bh*.15,bw*.16,bh*.16,a,3.6,5.8);x.stroke();}}},
+    {k:"lionsmane",nm:"사자갈기해파리 Lion's Mane",mode:"drift",s:20,spd:9,band:[.12,.8],
+      draw:function(s,t){var p=Math.sin(t*1.1),bh=s*(.7-.08*p),bw=s*(1+.06*p);
+        x.shadowColor="rgba(255,150,90,.55)";x.shadowBlur=12;
+        x.strokeStyle="rgba(255,170,110,.5)";x.lineWidth=Math.max(1,s*.04);
+        for(var i=-7;i<=7;i++){x.beginPath();x.moveTo(i*s*.1,bh*.4);x.quadraticCurveTo(i*s*.1+Math.sin(t*1.6+i)*s*.3,bh*1.6,i*s*.12+Math.sin(t+i)*s*.5,bh*2.6);x.stroke();}
+        var g=x.createRadialGradient(0,-bh*.2,1,0,0,bw);g.addColorStop(0,"rgba(255,210,150,.85)");g.addColorStop(.6,"rgba(230,120,70,.5)");g.addColorStop(1,"rgba(160,60,40,.15)");
+        x.fillStyle=g;x.beginPath();x.moveTo(-bw,bh*.1);x.quadraticCurveTo(-bw,-bh,0,-bh);x.quadraticCurveTo(bw,-bh,bw,bh*.1);
+        x.quadraticCurveTo(bw*.5,bh*.4,0,bh*.12);x.quadraticCurveTo(-bw*.5,bh*.4,-bw,bh*.1);x.closePath();x.fill();x.shadowBlur=0;}},
+    {k:"combjelly",nm:"빗해파리 Comb Jelly",mode:"drift",s:14,spd:13,band:[.15,.8],
+      draw:function(s,t){x.shadowColor="rgba(120,220,255,.6)";x.shadowBlur=12;
+        var g=x.createRadialGradient(0,0,1,0,0,s);g.addColorStop(0,"rgba(210,240,255,.5)");g.addColorStop(1,"rgba(140,200,255,.08)");
+        x.fillStyle=g;ell(0,0,s*.7,s*1.05);x.fill();x.shadowBlur=0;
+        for(var i=-3;i<=3;i++){var hue=(t*60+i*45)%360;x.strokeStyle="hsla("+hue+",90%,70%,.85)";x.lineWidth=Math.max(1,s*.06);
+          x.beginPath();x.moveTo(i*s*.16,-s*.9);x.quadraticCurveTo(i*s*.22,0,i*s*.16,s*.9);x.stroke();}}},
+    {k:"nautilus",nm:"앵무조개 Nautilus",mode:"jet",s:18,spd:16,band:[.4,.78],
+      draw:function(s,t){x.fillStyle="#e7ddc8";for(var i=0;i<10;i++){var a=t*.4+i*.3;x.beginPath();x.moveTo(s*.2,s*.1);
+        x.lineTo(s*.2+Math.cos(a)*s*.5,s*.1+Math.sin(a)*s*.5+Math.sin(t*2+i)*s*.1);x.lineWidth=Math.max(1,s*.06);x.strokeStyle="#e7ddc8";x.stroke();}/*tentacle tuft front*/
+        var g=x.createRadialGradient(-s*.2,-s*.2,2,-s*.1,0,s);g.addColorStop(0,"#fff7e6");g.addColorStop(1,"#caa46a");x.fillStyle=g;
+        x.beginPath();x.arc(0,0,s,0,TWO);x.fill();/*shell disc*/
+        x.strokeStyle="#9a6a2e";x.lineWidth=Math.max(1,s*.09);
+        for(i=0;i<11;i++){var a0=i*0.55,a1=a0+0.55,rr=s*(1-i*.08);x.beginPath();x.arc(0,0,rr,a0,a1);x.stroke();}
+        x.fillStyle="#a8753a";x.beginPath();x.arc(s*.3,-s*.25,s*.18,0,TWO);x.fill();/*hood*/}},
+    {k:"cuttlefish",nm:"갑오징어 Cuttlefish",mode:"jet",s:18,spd:20,band:[.35,.72],
+      draw:function(s,t){var h=s*.5;
+        x.fillStyle="rgba(180,160,200,.6)";/*undulating fin fringe*/
+        x.beginPath();x.moveTo(s*.7,-h);for(var i=0;i<=14;i++){var px=s*.7-i*s*.13;x.lineTo(px,-h-s*.12-Math.sin(t*3+i*.7)*s*.1);}x.lineTo(-s*1.1,-h*.4);x.closePath();x.fill();
+        x.beginPath();x.moveTo(s*.7,h);for(i=0;i<=14;i++){px=s*.7-i*s*.13;x.lineTo(px,h+s*.12+Math.sin(t*3+i*.7)*s*.1);}x.lineTo(-s*1.1,h*.4);x.closePath();x.fill();
+        x.fillStyle=lin3(-h,h,"#c9b8d8","#9a82b8","#6e5690");ell(-s*.1,0,s*.85,h);x.fill();
+        for(i=0;i<6;i++){x.strokeStyle="rgba(110,86,144,.7)";x.lineWidth=Math.max(1,s*.06);x.beginPath();x.moveTo(s*.7,-h*.4+i*h*.16);x.quadraticCurveTo(s*1.2,(-h*.4+i*h*.16)+Math.sin(t*2+i)*4,s*1.4,Math.sin(t+i)*s*.1);x.stroke();}/*arms*/
+        eye(s*.6,-h*.25,s*.13,"#1a0f28");x.fillStyle="#1a0f28";x.fillRect(s*.52,-h*.28,s*.16,s*.05);}},
+    {k:"squid",nm:"오징어 Squid",mode:"jet",s:20,spd:30,band:[.3,.68],
+      draw:function(s,t){var h=s*.32;
+        x.fillStyle="#d24a52";x.beginPath();x.moveTo(-s*.7,0);x.lineTo(-s*1.15,-h*1.5);x.lineTo(-s*.85,0);x.lineTo(-s*1.15,h*1.5);x.closePath();x.fill();/*fins at tail*/
+        x.fillStyle=lin3(-h,h,"#f06a72","#d24a52","#a02a36");
+        x.beginPath();x.moveTo(s*.5,0);x.quadraticCurveTo(s*.2,-h,-s*.7,-h*.5);x.quadraticCurveTo(-s*.95,0,-s*.7,h*.5);x.quadraticCurveTo(s*.2,h,s*.5,0);x.closePath();x.fill();/*mantle*/
+        x.strokeStyle="#c0424a";x.lineWidth=Math.max(1,s*.07);x.lineCap="round";
+        for(var i=0;i<8;i++){var o=(i-3.5)*s*.07;x.beginPath();x.moveTo(s*.5,o*.4);x.quadraticCurveTo(s*1.0,o+Math.sin(t*2+i)*5,s*1.5,o*2+Math.sin(t*1.5+i)*s*.15);x.stroke();}x.lineCap="butt";/*tentacles*/
+        eye(s*.4,-h*.4,s*.16,"#160606");}},
+    {k:"octopus",nm:"문어 Octopus",mode:"crawl",s:20,spd:9,fy:18,band:[.8,.86],
+      draw:function(s,t){
+        x.strokeStyle="#b8443e";x.lineWidth=Math.max(2,s*.13);x.lineCap="round";
+        for(var i=0;i<8;i++){var a=(i/7-0.5)*2.4,cur=Math.sin(t*1.5+i)*s*.4;
+          x.beginPath();x.moveTo(0,s*.2);x.quadraticCurveTo(Math.cos(a)*s*.9,s*.7+cur*.3,Math.cos(a)*s*1.5,s*.95+Math.abs(cur));x.stroke();}x.lineCap="butt";
+        var g=x.createRadialGradient(-s*.2,-s*.4,2,0,-s*.1,s);g.addColorStop(0,"#ff7a6e");g.addColorStop(1,"#a8362f");x.fillStyle=g;
+        x.beginPath();x.ellipse(0,-s*.25,s*.7,s*.78,0,0,TWO);x.fill();/*mantle head*/
+        spots(s*.7,s*.78,"rgba(120,30,26,.5)",10,4,.08);
+        eye(s*.32,-s*.4,s*.16,"#180606");eye(-s*.32,-s*.4,s*.16,"#180606");}},
+    {k:"seahorse",nm:"해마 Seahorse",mode:"hover",s:16,spd:6,band:[.4,.78],
+      draw:function(s,t){x.rotate(0.15*Math.sin(t));
+        x.fillStyle=lin(-s,s,"#ffb24d","#d97a1e");
+        x.beginPath();x.moveTo(s*.1,-s*.95);/*head*/x.quadraticCurveTo(s*.55,-s*.85,s*.5,-s*.5);
+        x.quadraticCurveTo(s*.1,-s*.2,s*.05,s*.2);/*body curve*/
+        x.quadraticCurveTo(s*.1,s*.7,-s*.35,s*.95);/*curled tail*/
+        x.quadraticCurveTo(-s*.05,s*.7,-s*.15,s*.1);x.quadraticCurveTo(-s*.25,-s*.3,-s*.15,-s*.6);
+        x.quadraticCurveTo(-s*.25,-s*.95,s*.1,-s*.95);x.closePath();x.fill();
+        x.fillStyle="#c06a18";x.fillRect(s*.4,-s*1.05,s*.3,s*.12);/*snout*/
+        x.fillStyle="rgba(255,225,150,.7)";for(var i=0;i<6;i++){x.beginPath();x.moveTo(-s*.18,-s*.6+i*s*.22);x.quadraticCurveTo(-s*.45,(-s*.6+i*s*.22)+Math.sin(t*3+i)*s*.06,-s*.35,(-s*.6+i*s*.22)+s*.12);x.stroke?x.fill():0;x.fill();}/*dorsal fin flutter*/
+        eye(s*.32,-s*.78,s*.1,"#1a0c00");}},
+    {k:"seadragon",nm:"잎해룡 Leafy Sea Dragon",mode:"hover",s:18,spd:7,band:[.42,.76],
+      draw:function(s,t){x.fillStyle="#3aa86a";/*leafy appendages*/
+        for(var i=0;i<9;i++){var a=i*0.7,lx=Math.cos(a)*s*.7,ly=Math.sin(a)*s*.9-s*.1+Math.sin(t*2+i)*s*.06;
+          x.save();x.translate(lx,ly);x.rotate(a+Math.sin(t+i)*.2);x.beginPath();x.ellipse(0,s*.18,s*.08,s*.24,0,0,TWO);x.fill();x.restore();}
+        x.fillStyle=lin(-s,s,"#e0c86a","#9a7a2e");
+        x.beginPath();x.moveTo(s*.1,-s*.85);x.quadraticCurveTo(s*.5,-s*.7,s*.42,-s*.4);x.quadraticCurveTo(s*.05,s*.2,-s*.4,s*.8);
+        x.quadraticCurveTo(-s*.1,s*.2,-s*.12,-s*.2);x.quadraticCurveTo(-s*.2,-s*.85,s*.1,-s*.85);x.closePath();x.fill();
+        x.fillStyle="#caa84a";x.fillRect(s*.36,-s*.95,s*.28,s*.1);eye(s*.3,-s*.66,s*.09,"#1a1305");}},
+    {k:"pipefish",nm:"실고기 Pipefish",mode:"hover",s:22,spd:10,band:[.45,.8],
+      draw:function(s,t){var h=s*.14,wv=Math.sin(t*2);
+        x.strokeStyle=lin(-h,h,"#d8c87a","#9a8a4a");x.lineWidth=h*2;x.lineCap="round";
+        x.beginPath();x.moveTo(s,wv*s*.05);for(var i=1;i<=12;i++){var px=s-i*s*.16;x.lineTo(px,Math.sin(t*2+i*.5)*s*.12);}x.stroke();x.lineCap="butt";
+        x.save();ell(s*.85,wv*s*.05,h*1.6,h*1.4);x.clip();x.fillStyle="#bfa85e";x.fillRect(s*.5,-s,s,s*2);x.restore();
+        eye(s*.92,wv*s*.05-h*.3,h*.7,"#1a1305");
+        x.fillStyle="#bfa85e";for(i=0;i<10;i++){var sx=s-i*s*.18;x.fillRect(sx,Math.sin(t*2+i*.5)*s*.12-h*1.6,h*.6,h*.6);}}},
+    {k:"anglerfish",nm:"아귀 Anglerfish",mode:"swim",s:18,spd:12,band:[.55,.8],
+      draw:function(s,t){var h=s*.72;
+        var gl=0.6+0.4*Math.sin(t*2);x.fillStyle="rgba(180,255,200,"+gl+")";x.shadowColor="#9affc8";x.shadowBlur=16;
+        x.beginPath();x.arc(s*.95,-h*.95,s*.13,0,TWO);x.fill();x.shadowBlur=0;/*lure*/
+        x.strokeStyle="#2a3030";x.lineWidth=Math.max(1,s*.05);x.beginPath();x.moveTo(s*.3,-h*.7);x.quadraticCurveTo(s*.9,-h*1.4,s*.95,-h*.95);x.stroke();/*lure stalk*/
+        x.fillStyle=lin3(-h,h,"#3a4038","#23271f","#121410");ell(-s*.1,0,s,h);x.fill();
+        x.fillStyle="#1a1c16";x.beginPath();x.moveTo(s*.85,h*.05);x.quadraticCurveTo(s*.4,h*.55,-s*.2,h*.35);x.quadraticCurveTo(s*.3,h*.1,s*.85,h*.05);x.closePath();x.fill();/*gaping mouth*/
+        x.strokeStyle="#fff";x.lineWidth=Math.max(1,s*.04);for(var i=0;i<6;i++){x.beginPath();x.moveTo(s*.7-i*s*.16,h*.12);x.lineTo(s*.62-i*s*.16,h*.3);x.stroke();}/*teeth*/
+        eye(s*.5,-h*.35,s*.1,"#000");}},
+    {k:"hatchet",nm:"은도끼고기 Hatchetfish",mode:"swim",s:13,spd:24,band:[.5,.78],
+      draw:function(s,t){var h=s*.9;
+        x.fillStyle=lin3(-h*.5,h,"#cfe0ea","#9fb6c6","#5a7080");
+        x.beginPath();x.moveTo(s*.7,-h*.2);x.quadraticCurveTo(s*.2,-h*.55,-s*.5,-h*.3);x.lineTo(-s*.6,0);
+        x.quadraticCurveTo(-s*.2,h,s*.1,h);x.quadraticCurveTo(s*.55,h*.7,s*.7,-h*.2);x.closePath();x.fill();/*hatchet body*/
+        x.fillStyle="#7a90a0";x.beginPath();x.moveTo(-s*.6,0);x.lineTo(-s*1.1,-h*.4+Math.sin(t)*4);x.lineTo(-s*1.1,h*.4+Math.sin(t)*4);x.closePath();x.fill();
+        x.fillStyle="rgba(150,255,210,.8)";x.shadowColor="#9affd0";x.shadowBlur=8;for(var i=0;i<5;i++){x.beginPath();x.arc(-s*.2+i*s*.18,h*.85,s*.07,0,TWO);x.fill();}x.shadowBlur=0;/*photophores*/
+        eye(s*.4,-h*.15,s*.18,"#0a0f14");}},
+    {k:"crab",nm:"게 Crab",mode:"crawl",s:16,spd:7,fy:10,band:[.82,.86],
+      draw:function(s,t){var lg=Math.sin(t*3)*s*.12;
+        x.strokeStyle="#c0431f";x.lineWidth=Math.max(2,s*.1);x.lineCap="round";
+        for(var i=0;i<4;i++){var sx=-s*.5+i*s*.33;x.beginPath();x.moveTo(sx,s*.2);x.lineTo(sx-s*.3,s*.6+lg);x.lineTo(sx-s*.45,s*.95-lg);x.stroke();
+          x.beginPath();x.moveTo(sx,s*.2);x.lineTo(sx+s*.3,s*.6-lg);x.lineTo(sx+s*.45,s*.95+lg);x.stroke();}x.lineCap="butt";
+        var g=x.createRadialGradient(-s*.15,-s*.2,2,0,0,s);g.addColorStop(0,"#ff7a42");g.addColorStop(1,"#b8381a");x.fillStyle=g;
+        x.beginPath();x.ellipse(0,0,s*.85,s*.55,0,0,TWO);x.fill();/*carapace*/
+        x.strokeStyle="#a02e14";x.lineWidth=Math.max(2,s*.12);x.lineCap="round";/*claws*/
+        x.beginPath();x.moveTo(s*.6,-s*.1);x.lineTo(s*1.0,-s*.35);x.stroke();x.beginPath();x.moveTo(-s*.6,-s*.1);x.lineTo(-s*1.0,-s*.35);x.stroke();x.lineCap="butt";
+        x.fillStyle="#d2452a";x.beginPath();x.arc(s*1.05,-s*.4,s*.18,0,TWO);x.arc(-s*1.05,-s*.4,s*.18,0,TWO);x.fill();
+        x.fillStyle="#1a0a06";x.beginPath();x.arc(-s*.25,-s*.45,s*.09,0,TWO);x.arc(s*.25,-s*.45,s*.09,0,TWO);x.fill();/*eyes on stalks*/}},
+    {k:"starfish",nm:"불가사리 Starfish",mode:"crawl",s:17,spd:3,fy:6,band:[.83,.87],
+      draw:function(s,t){var g=x.createRadialGradient(0,0,2,0,0,s);g.addColorStop(0,"#ffb24d");g.addColorStop(1,"#e0631f");x.fillStyle=g;
+        x.beginPath();for(var i=0;i<10;i++){var a=i*Math.PI/5-Math.PI/2,rr=(i%2?s*.42:s);x.lineTo(Math.cos(a)*rr,Math.sin(a)*rr);}x.closePath();x.fill();
+        x.fillStyle="rgba(255,235,180,.7)";for(i=0;i<5;i++){var a2=i*TWO/5-Math.PI/2;for(var j=1;j<=4;j++){x.beginPath();x.arc(Math.cos(a2)*s*.2*j,Math.sin(a2)*s*.2*j,s*.05,0,TWO);x.fill();}}}},
+    {k:"mantis",nm:"공작갯가재 Mantis Shrimp",mode:"crawl",s:17,spd:6,fy:9,band:[.82,.86],
+      draw:function(s,t){var h=s*.3;
+        x.fillStyle=lin3(-h,h,"#46c87a","#2a9a6a","#1f7a8a");/*segmented body*/
+        for(var i=0;i<7;i++){var sx=-s*.7+i*s*.24;x.beginPath();x.ellipse(sx,Math.sin(i)*1,s*.16,h,0,0,TWO);x.fill();}
+        x.fillStyle="#ff8a2a";for(i=0;i<7;i++){var sx2=-s*.7+i*s*.24;x.fillRect(sx2-s*.02,-h,s*.04,h*2);}/*orange bands*/
+        x.fillStyle="#e0631f";x.beginPath();x.moveTo(s*.6,h*.2);x.lineTo(s*1.05,h*.5);x.lineTo(s*.95,-h*.1);x.closePath();x.fill();/*raptorial claw*/
+        x.fillStyle="#2a9a6a";x.beginPath();x.moveTo(-s*.85,0);for(i=0;i<5;i++){var a=2.2+i*.25;x.lineTo(-s*.85+Math.cos(a)*s*.35,Math.sin(a)*s*.3);}x.closePath();x.fill();/*tail fan*/
+        x.fillStyle="#ffd23c";x.beginPath();x.arc(s*.7,-h*.6,s*.12,0,TWO);x.arc(s*.55,-h*.6,s*.12,0,TWO);x.fill();/*stalked eyes*/
+        x.fillStyle="#1a0a06";x.beginPath();x.arc(s*.7,-h*.6,s*.05,0,TWO);x.arc(s*.55,-h*.6,s*.05,0,TWO);x.fill();}},
+    {k:"nudibranch",nm:"갯민숭달팽이 Nudibranch",mode:"crawl",s:15,spd:5,fy:7,band:[.83,.87],
+      draw:function(s,t){var g=x.createLinearGradient(-s,0,s,0);g.addColorStop(0,"#ff5ea8");g.addColorStop(.5,"#ffd23c");g.addColorStop(1,"#7a5cff");x.fillStyle=g;
+        x.beginPath();x.ellipse(0,s*.1,s,s*.42,0,0,TWO);x.fill();/*body*/
+        x.strokeStyle="#ff8ad0";x.lineWidth=Math.max(1,s*.08);x.lineCap="round";/*cerata frills*/
+        for(var i=-5;i<=5;i++){x.beginPath();x.moveTo(i*s*.16,-s*.1);x.lineTo(i*s*.16+Math.sin(t*2+i)*s*.06,-s*.5-Math.abs(Math.sin(i))*s*.15);x.stroke();}x.lineCap="butt";
+        x.fillStyle="#ff5ea8";x.beginPath();x.moveTo(s*.9,0);x.lineTo(s*1.1,-s*.22);x.lineTo(s*.85,-s*.1);x.closePath();x.fill();/*rhinophore*/
+        eye(s*.8,-s*.02,s*.06,"#3a0a2a");}}
+    ];
+
+    /* ---------- spawn a diverse, depth-sorted population ---------- */
+    var creatures=[],i;
+    var byKey={};SPECIES.forEach(function(s){byKey[s.k]=s;});
+    function bandY(b){return H*0.08+b*(floorY-H*0.08);}
+    function spawn(sp,added){
+      var z=rnd(),sc=0.62+z*0.62,dir=rnd()<0.5?1:-1,b=sp.band[0]+rnd()*(sp.band[1]-sp.band[0]);
+      var o={sp:sp,draw:sp.draw,mode:sp.mode,s:sp.s,sc:sc,z:z,dir:dir,ph:rnd()*TWO,tf:0.7+rnd()*0.8,
+        ay:bandY(b),ba:6+rnd()*10,bf:0.6+rnd()*0.8,sw:14+rnd()*22,vy:sp.spd*(0.5+rnd()*0.6),
+        vx:sp.spd*(0.6+rnd()*0.7)*dir,fy:sp.fy||0,alpha:0.72+z*0.28,added:!!added};
+      o.x=rnd()*W;o.y=(sp.mode==="crawl")?floorY-o.fy:o.ay;
+      creatures.push(o);return o;
+    }
+    function resort(){creatures.sort(function(a,b){return a.z-b.z;});}
+    SPECIES.forEach(function(s){spawn(s);});
+    /* a few schooling extras for life */
+    ["clown","tang","hatchet","butterfly","moonjelly","combjelly","mandarin","clown","tang"].forEach(function(k){
+      if(byKey[k])spawn(byKey[k]);});
+    resort();
+
+    /* ---------- luxury tank décor ---------- */
+    var shafts=[];for(i=0;i<6;i++)shafts.push({x:rnd()*W,w:W*(0.06+rnd()*0.1),sp:0.2+rnd()*0.5,ph:rnd()*TWO});
+    var snow=[];for(i=0;i<70;i++)snow.push({x:rnd()*W,y:rnd()*H,r:0.5+rnd()*1.6,v:3+rnd()*9,ph:rnd()*TWO});
+    var bub=[];for(i=0;i<26;i++)bub.push({x:rnd()*W,y:rnd()*H,r:1+rnd()*2.4,v:14+rnd()*26,ph:rnd()*TWO});
+    var rocks=[];for(i=0;i<6;i++){var rw=24+rnd()*48;rocks.push({x:rnd()*W,y:floorY+rnd()*14,rw:rw,rh:rw*(0.4+rnd()*0.3),g:rnd()});}
+    var kelp=[];for(i=0;i<8;i++)kelp.push({x:30+rnd()*(W-60),h:60+rnd()*150,w:5+rnd()*5,sp:0.4+rnd()*0.7,ph:rnd()*TWO,hue:90+rnd()*60});
+    function makeCoral(bx,cols){var br=[],n=22;for(var j=0;j<n;j++){var ang=-Math.PI/2+(rnd()-0.5)*1.5,len=12+rnd()*30;
+      var x1=bx+(rnd()-0.5)*46,y1=floorY-rnd()*10;br.push({x1:x1,y1:y1,x2:x1+Math.cos(ang)*len,y2:y1+Math.sin(ang)*len,w:2+rnd()*4,c:cols[j%cols.length]});}return br;}
+    var corals=[makeCoral(W*0.16,["#ff6aa0","#ff9ec4","#e0508a"]),makeCoral(W*0.5,["#ffa53c","#ffc878","#e0852a"]),
+                makeCoral(W*0.83,["#9a6aff","#c4a0ff","#7a52e0"])];
+    var anem={x:W*0.66,n:16};
+
+    /* ---------- hover-to-identify + hit testing ---------- */
+    var hov={on:false,x:0,y:0};
+    function canvasXY(e){var r=c.getBoundingClientRect();return{x:(e.clientX-r.left)*(W/r.width),y:(e.clientY-r.top)*(H/r.height)};}
+    function creatureAt(px,py){for(var k=creatures.length-1;k>=0;k--){var o=creatures[k],rad=o.s*o.sc*1.55,dx=px-o.x,dy=py-o.y;if(dx*dx+dy*dy<rad*rad)return o;}return null;}
+    function rrect(rx,ry,rw,rh,r){x.beginPath();x.moveTo(rx+r,ry);x.arcTo(rx+rw,ry,rx+rw,ry+rh,r);x.arcTo(rx+rw,ry+rh,rx,ry+rh,r);x.arcTo(rx,ry+rh,rx,ry,r);x.arcTo(rx,ry,rx+rw,ry,r);x.closePath();}
+
+    /* ================= AQUARIUM DECORATE — a small game ================
+       Tap a creature to harvest 🦪 pearls (+ passive income). Spend pearls in
+       the bottom shop to duplicate/stock that species. Your tank persists. */
+    var SHOP={ /* per-species emoji + pearl cost (rarity-priced) */
+      clown:["🐠",4],tang:["🐟",5],moorish:["🐠",7],angel:["🐠",7],mandarin:["🐠",8],lionfish:["🦁",10],
+      puffer:["🐡",8],butterfly:["🦋",6],discus:["🐟",7],coelacanth:["🐟",16],hammer:["🦈",18],whale:["🐋",25],
+      manta:["🪁",16],eagleray:["🪁",14],turtle:["🐢",15],moonjelly:["🎐",6],lionsmane:["🎐",9],combjelly:["✨",9],
+      nautilus:["🐚",11],cuttlefish:["🦑",10],squid:["🦑",9],octopus:["🐙",13],seahorse:["🐴",8],seadragon:["🐉",14],
+      pipefish:["〰️",6],anglerfish:["🎣",17],hatchet:["🔦",10],crab:["🦀",7],starfish:["⭐",4],mantis:["🦐",11],nudibranch:["🐌",8]};
+    var MAXC=110, pops=[], coins=18, addedKeys=[], incomeAcc=0;
+    var SAVE="tos_aqua_v1";
+    function load(){try{var s=JSON.parse(localStorage.getItem(SAVE));if(s){coins=s.c||coins;(s.a||[]).forEach(function(k){if(byKey[k]&&creatures.length<MAXC){spawn(byKey[k],true);addedKeys.push(k);}});resort();}}catch(_){}}
+    function save(){try{localStorage.setItem(SAVE,JSON.stringify({c:coins,a:addedKeys}));}catch(_){}}
+    function addPop(px,py,txt,col){pops.push({x:px,y:py,t:txt,c:col||"#aef3ff",life:1});}
+    var elC=document.getElementById("fish-coins"),elP=document.getElementById("fish-pop");
+    function ui(){if(elC)elC.textContent=coins;if(elP)elP.textContent=creatures.length;
+      var pal=document.getElementById("fish-palette");if(pal)pal.querySelectorAll(".dchip").forEach(function(ch){
+        ch.classList.toggle("poor",coins<(+ch.getAttribute("data-cost")));});}
+    function buy(k){var sp=byKey[k];if(!sp)return;var cost=SHOP[k]?SHOP[k][1]:8;
+      if(creatures.length>=MAXC){toast(ko()?"수족관이 가득 찼어요 ("+MAXC+")":"Tank is full ("+MAXC+")");return;}
+      if(coins<cost){toast(ko()?"🦪 진주가 부족해요 — 생물을 탭해서 모으세요":"Not enough pearls — tap creatures to harvest");return;}
+      coins-=cost;var o=spawn(sp,true);addedKeys.push(k);resort();
+      addPop(o.x,o.y-o.s*o.sc-8,"+1 "+(SHOP[k]?SHOP[k][0]:"🐠"),"#9effc8");
+      save();ui();}
+    function buildPalette(){var pal=document.getElementById("fish-palette");if(!pal)return;
+      SPECIES.forEach(function(sp){var d=SHOP[sp.k]||["🐠",8];var ko2=sp.nm.split(" ")[0];
+        var b=document.createElement("div");b.className="dchip";b.setAttribute("data-sp",sp.k);b.setAttribute("data-cost",d[1]);
+        b.title=sp.nm;b.innerHTML="<div class='e'>"+d[0]+"</div><div class='n'>"+ko2+"</div><div class='c'>"+d[1]+"🦪</div>";
+        b.addEventListener("click",function(){buy(sp.k);});pal.appendChild(b);});}
+    buildPalette();load();ui();
+    /* passive pearl income (also ticks while tab is hidden via the draw loop's dt) */
+    function income(dt){incomeAcc+=dt;if(incomeAcc>=2.2){coins+=1;incomeAcc-=2.2;save();ui();}}
+
+    c.addEventListener("pointermove",function(e){var p=canvasXY(e);hov.x=p.x;hov.y=p.y;hov.on=true;});
+    c.addEventListener("pointerleave",function(){hov.on=false;c.style.cursor="default";});
+    c.addEventListener("pointerdown",function(e){var p=canvasXY(e);hov.x=p.x;hov.y=p.y;hov.on=true;
+      var hit=creatureAt(p.x,p.y);
+      if(hit){var gain=1+(SHOP[hit.sp.k]&&SHOP[hit.sp.k][1]>=14?1:0);coins+=gain;addPop(p.x,p.y-6,"+"+gain+" 🦪","#fff0a8");save();ui();}});
+    /* shop buttons */
+    var rb=document.getElementById("fish-rand");if(rb)rb.addEventListener("click",function(){
+      if(coins<3){toast(ko()?"🦪 진주가 부족해요 (랜덤 3)":"Not enough pearls (random costs 3)");return;}
+      if(creatures.length>=MAXC){toast(ko()?"수족관이 가득 찼어요":"Tank is full");return;}
+      coins-=3;var sp=SPECIES[Math.floor(rnd()*SPECIES.length)];var o=spawn(sp,true);addedKeys.push(sp.k);resort();
+      addPop(o.x,o.y-o.s*o.sc-8,"🎁 "+sp.nm.split(" ")[0],"#ffd2f0");save();ui();
+      toast(ko()?"🎁 "+sp.nm+" 등장!":"🎁 "+sp.nm+" appeared!");});
+    var cb=document.getElementById("fish-clear");if(cb)cb.addEventListener("click",function(){
+      creatures=creatures.filter(function(o){return !o.added;});addedKeys=[];save();ui();
+      toast(ko()?"추가한 생물을 모두 비웠어요":"Cleared all added creatures");});
+    var tb=document.getElementById("fish-toggle");if(tb)tb.addEventListener("click",function(){
+      var dz=document.getElementById("fish-deco");if(!dz)return;var col=dz.classList.toggle("collapsed");
+      tb.innerHTML=col?"&#128081; 펼치기":"&#128081; 접기";});
+
+    /* ---------- frame ---------- */
+    var last=performance.now();
+    function wrapX(o){if(o.x>W+60)o.x=-60;else if(o.x<-60)o.x=W+60;}
+    function draw(now){
+      var dt=Math.min(0.05,(now-last)/1000);last=now;
+      income(dt);
+
+      /* water column — bright near surface, deep blue below */
+      var g=x.createLinearGradient(0,0,0,H);g.addColorStop(0,"#1b78b8");g.addColorStop(.35,"#0d4f8f");g.addColorStop(.75,"#072f63");g.addColorStop(1,"#03182f");
+      x.fillStyle=g;x.fillRect(0,0,W,H);
+
+      /* god-ray light shafts from the surface */
+      x.globalCompositeOperation="lighter";
+      for(i=0;i<shafts.length;i++){var sh=shafts[i],sx=sh.x+Math.sin(now*0.0002*sh.sp+sh.ph)*W*0.08;
+        var lg=x.createLinearGradient(sx,0,sx-W*0.1,H);lg.addColorStop(0,"rgba(140,205,255,.16)");lg.addColorStop(1,"rgba(140,205,255,0)");
+        x.fillStyle=lg;x.beginPath();x.moveTo(sx-sh.w,0);x.lineTo(sx+sh.w,0);x.lineTo(sx+sh.w*1.6-W*0.1,H);x.lineTo(sx-sh.w*1.6-W*0.1,H);x.closePath();x.fill();}
+      x.globalCompositeOperation="source-over";
+
+      /* sand floor with caustic shimmer */
+      var sg=x.createLinearGradient(0,floorY-10,0,H);sg.addColorStop(0,"#caa86a");sg.addColorStop(.4,"#b89352");sg.addColorStop(1,"#8a6a36");
+      x.fillStyle=sg;x.beginPath();x.moveTo(0,floorY+8);
+      for(var w=0;w<=W;w+=24)x.lineTo(w,floorY+Math.sin(w*0.05+now*0.0003)*5);
+      x.lineTo(W,H);x.lineTo(0,H);x.closePath();x.fill();
+      x.globalCompositeOperation="lighter";
+      for(i=0;i<10;i++){var cx2=(i*W/9+now*0.02)%W,cw=18+8*Math.sin(now*0.001+i);
+        x.fillStyle="rgba(255,240,200,.10)";x.beginPath();x.ellipse(cx2,floorY+24+10*Math.sin(i*1.3),cw,6,0,0,TWO);x.fill();}
+      x.globalCompositeOperation="source-over";
+      for(i=0;i<rocks.length;i++){var rk=rocks[i];var rg=x.createLinearGradient(rk.x,rk.y-rk.rh,rk.x,rk.y+rk.rh);
+        rg.addColorStop(0,rk.g>.5?"#8a8f98":"#7a7068");rg.addColorStop(1,"#3a3a40");x.fillStyle=rg;
+        x.beginPath();x.ellipse(rk.x,rk.y,rk.rw,rk.rh,0,0,TWO);x.fill();}
+
+      /* corals + anemone + kelp (behind the swimmers) */
+      for(i=0;i<corals.length;i++){var br=corals[i];x.lineCap="round";
+        for(var j=0;j<br.length;j++){var b=br[j],sway=Math.sin(now*0.0008+b.x)*3;
+          x.strokeStyle=b.c;x.lineWidth=b.w;x.beginPath();x.moveTo(b.x1,b.y1);x.quadraticCurveTo((b.x1+b.x2)/2+sway,(b.y1+b.y2)/2,b.x2+sway,b.y2);x.stroke();}}
+      x.lineCap="butt";
+      x.strokeStyle="#ff8ac0";x.lineWidth=4;x.lineCap="round";
+      for(i=0;i<anem.n;i++){var aa=(i/anem.n)*TWO,aw=Math.sin(now*0.002+i)*6;
+        x.beginPath();x.moveTo(anem.x+Math.cos(aa)*8,floorY-4);x.quadraticCurveTo(anem.x+Math.cos(aa)*18+aw,floorY-28,anem.x+Math.cos(aa)*22+aw,floorY-46);x.stroke();}
+      x.fillStyle="#d96a9a";x.beginPath();x.ellipse(anem.x,floorY-2,18,8,0,0,TWO);x.fill();x.lineCap="butt";
+      for(i=0;i<kelp.length;i++){var kp=kelp[i];x.strokeStyle="hsla("+kp.hue+",55%,38%,.92)";x.lineWidth=kp.w;x.lineCap="round";
+        x.beginPath();x.moveTo(kp.x,floorY+6);var segs=7;
+        for(j=1;j<=segs;j++){var ky=floorY+6-(kp.h/segs)*j,kx=kp.x+Math.sin(now*0.001*kp.sp+kp.ph+j*0.6)*(8+j*2);x.lineTo(kx,ky);}x.stroke();}
+      x.lineCap="butt";
+
+      /* drifting marine snow (depth dust) */
+      for(i=0;i<snow.length;i++){var sn=snow[i];sn.y-=sn.v*dt*0.3;sn.x+=Math.sin(now*0.0004+sn.ph)*4*dt;
+        if(sn.y<0){sn.y=H;sn.x=rnd()*W;}x.fillStyle="rgba(210,235,255,.18)";x.beginPath();x.arc(sn.x,sn.y,sn.r,0,TWO);x.fill();}
+
+      /* ---- the creatures (sorted far→near for depth) ---- */
+      for(i=0;i<creatures.length;i++){var o=creatures[i];
+        switch(o.mode){
+          case "swim":case "jet":o.x+=o.vx*dt;o.y=o.ay+Math.sin(now*0.001*o.bf+o.ph)*o.ba;wrapX(o);break;
+          case "glide":o.x+=o.vx*dt;o.y=o.ay+Math.sin(now*0.0006+o.ph)*o.ba*1.7;wrapX(o);break;
+          case "hover":o.x+=o.vx*dt;o.y=o.ay+Math.sin(now*0.0014+o.ph)*o.ba;wrapX(o);break;
+          case "drift":o.y-=o.vy*dt;o.x+=Math.sin(now*0.0007+o.ph)*o.sw*dt;if(o.y<-50){o.y=H+40;o.x=rnd()*W;}wrapX(o);break;
+          case "crawl":o.x+=o.vx*dt;o.y=floorY-o.fy+Math.sin(now*0.004+o.ph)*1.5;wrapX(o);break;
+        }
+        var t=now*0.006*o.tf+o.ph;
+        x.save();x.translate(o.x,o.y);x.scale(o.dir*o.sc,o.sc);x.globalAlpha=o.alpha;
+        o.draw(o.s,t);x.restore();x.globalAlpha=1;
+      }
+
+      /* rising bubbles */
+      for(i=0;i<bub.length;i++){var bb=bub[i];bb.y-=bb.v*dt;bb.x+=Math.sin(now*0.002+bb.ph)*8*dt;if(bb.y<-6){bb.y=H+6;bb.x=rnd()*W;}
+        x.strokeStyle="rgba(210,238,255,.45)";x.lineWidth=1;x.beginPath();x.arc(bb.x,bb.y,bb.r,0,TWO);x.stroke();
+        x.fillStyle="rgba(255,255,255,.5)";x.beginPath();x.arc(bb.x-bb.r*0.3,bb.y-bb.r*0.3,bb.r*0.3,0,TWO);x.fill();}
+
+      /* front-glass: top sheen, soft vignette, corner gloss — the "premium tank" feel */
+      var top=x.createLinearGradient(0,0,0,H*0.3);top.addColorStop(0,"rgba(255,255,255,.16)");top.addColorStop(1,"rgba(255,255,255,0)");
+      x.fillStyle=top;x.fillRect(0,0,W,H*0.3);
+      var vg=x.createRadialGradient(W/2,H/2,H*0.35,W/2,H/2,H*0.85);vg.addColorStop(0,"rgba(0,0,0,0)");vg.addColorStop(1,"rgba(0,10,30,.5)");
+      x.fillStyle=vg;x.fillRect(0,0,W,H);
+      x.globalCompositeOperation="lighter";var gloss=x.createLinearGradient(0,0,W*0.5,H);gloss.addColorStop(0,"rgba(170,220,255,.07)");gloss.addColorStop(1,"rgba(170,220,255,0)");
+      x.fillStyle=gloss;x.beginPath();x.moveTo(0,0);x.lineTo(W*0.32,0);x.lineTo(0,H*0.7);x.closePath();x.fill();x.globalCompositeOperation="source-over";
+
+      /* ---- floating pearl pops (game feedback) ---- */
+      for(i=pops.length-1;i>=0;i--){var pp=pops[i];pp.y-=26*dt;pp.life-=dt*0.9;if(pp.life<=0){pops.splice(i,1);continue;}
+        x.globalAlpha=Math.max(0,Math.min(1,pp.life));x.font="bold 16px 'Malgun Gothic','Segoe UI',sans-serif";
+        x.textAlign="center";x.lineWidth=3;x.strokeStyle="rgba(2,12,28,.8)";x.strokeText(pp.t,pp.x,pp.y);
+        x.fillStyle=pp.c;x.fillText(pp.t,pp.x,pp.y);x.textAlign="left";}
+      x.globalAlpha=1;
+
+      /* ---- hover label: identify the nearest creature under the cursor ---- */
+      if(hov.on){
+        var hit=creatureAt(hov.x,hov.y); /* near→far, topmost */
+        c.style.cursor=hit?"pointer":"default";
+        if(hit){
+          var label=hit.sp.nm;
+          x.font="bold 20px 'Malgun Gothic','Segoe UI',system-ui,sans-serif";
+          var tw=x.measureText(label).width,bw=tw+24,bh=30;
+          var lx=hit.x-bw/2,ly=hit.y-hit.s*hit.sc-bh-10;
+          if(ly<4)ly=hit.y+hit.s*hit.sc+10;
+          lx=Math.max(6,Math.min(W-bw-6,lx));ly=Math.max(6,Math.min(H-bh-6,ly));
+          x.fillStyle="rgba(150,225,255,.95)";x.beginPath();x.arc(hit.x,hit.y,4.5,0,TWO);x.fill();
+          x.strokeStyle="rgba(150,225,255,.55)";x.lineWidth=1.5;x.beginPath();x.moveTo(hit.x,hit.y);x.lineTo(lx+bw/2,ly+bh);x.stroke();
+          x.shadowColor="rgba(0,0,0,.5)";x.shadowBlur=8;
+          x.fillStyle="rgba(6,22,44,.88)";rrect(lx,ly,bw,bh,9);x.fill();x.shadowBlur=0;
+          x.strokeStyle="rgba(150,225,255,.65)";x.lineWidth=1.5;rrect(lx,ly,bw,bh,9);x.stroke();
+          x.fillStyle="#eaf6ff";x.textAlign="left";x.textBaseline="middle";
+          x.fillText(label,lx+12,ly+bh/2+1);x.textBaseline="alphabetic";x.textAlign="left";
+        }
+      }
+
+      requestAnimationFrame(draw);
+    }
+    draw(performance.now());
+  })();
+
+  /* ===== restored: God Doodle — "The Holy Spirit puppets you" (faithful to GodDoodle.HC) ===== */
+  (function(){
+    var c=document.getElementById("doodle-cv");if(!c)return;var x=c.getContext("2d"),CW=c.width,CH=c.height;
+    /* TempleOS 16-color palette as RGB; original draws red shapes + grayscale flood-fills + median smooth */
+    var HEX=["#000000","#0000aa","#00aa00","#00aaaa","#aa0000","#aa00aa","#aa5500","#aaaaaa","#555555","#5555ff","#55ff55","#55ffff","#ff5555","#ff55ff","#ffff55","#ffffff"];
+    var RGB=HEX.map(function(h){return [parseInt(h.slice(1,3),16),parseInt(h.slice(3,5),16),parseInt(h.slice(5,7),16)];});
+    var RED=4,GRAYS=[0,8,7,15];
+    var W2=128,H2=80,buf=new Uint8Array(W2*H2);
+    var off=document.createElement("canvas");off.width=W2;off.height=H2;var ox=off.getContext("2d"),img=ox.createImageData(W2,H2);
+    /* divine RNG — perturbed by the timing of YOUR presses (KbdMsEvtTime entropy) */
+    var seed=0x9e3779b9,bits=0,lastT=performance.now();
+    function feed(){var t=performance.now(),dt=t-lastT;lastT=t;seed=(seed^Math.floor((t*1000+dt*7919)>>>0))>>>0;seed=(Math.imul(seed,1664525)+1013904223)>>>0;bits+=11;}
+    function rnd(){seed=(Math.imul(seed,1664525)+1013904223)>>>0;return seed/4294967296;}
+    function ri(n){return Math.floor(rnd()*n);}
+    function set(px,py,col){if(px>=0&&px<W2&&py>=0&&py<H2)buf[py*W2+px]=col;}
+    function fillEllipse(cx,cy,rx,ry,col){rx=Math.max(2,rx);ry=Math.max(2,ry);for(var y=-ry;y<=ry;y++)for(var xx=-rx;xx<=rx;xx++)if((xx*xx)/(rx*rx)+(y*y)/(ry*ry)<=1)set(cx+xx,cy+y,col);}
+    function circle(cx,cy,r,col){for(var a=0;a<628;a+=4){set(cx+Math.round(Math.cos(a/100)*r),cy+Math.round(Math.sin(a/100)*r),col);}}
+    function line(x0,y0,x1,y1,col){var dx=Math.abs(x1-x0),dy=-Math.abs(y1-y0),sx=x0<x1?1:-1,sy=y0<y1?1:-1,e=dx+dy;while(1){set(x0,y0,col);if(x0===x1&&y0===y1)break;var e2=2*e;if(e2>=dy){e+=dy;x0+=sx;}if(e2<=dx){e+=dx;y0+=sy;}}}
+    function border(rx,ry,rw,rh,col){for(var i=0;i<=rw;i++){set(rx+i,ry,col);set(rx+i,ry+rh,col);}for(var j=0;j<=rh;j++){set(rx,ry+j,col);set(rx+rw,ry+j,col);}}
+    function flood(sx,sy,col){if(sx<0||sy<0||sx>=W2||sy>=H2)return;var t=buf[sy*W2+sx];if(t===col)return;var st=[sx,sy];while(st.length){var yy=st.pop(),xx=st.pop();if(xx<0||yy<0||xx>=W2||yy>=H2)continue;if(buf[yy*W2+xx]!==t)continue;buf[yy*W2+xx]=col;st.push(xx+1,yy,xx-1,yy,xx,yy+1,xx,yy-1);}}
+    function smooth(r){var src=buf.slice(),hist=new Int32Array(16);for(var y=0;y<H2;y++)for(var px=0;px<W2;px++){hist.fill(0);for(var dy=-r;dy<=r;dy++)for(var dx=-r;dx<=r;dx++){var nx=px+dx,ny=y+dy;if(nx>=0&&nx<W2&&ny>=0&&ny<H2)hist[src[ny*W2+nx]]++;}var best=0,bc=-1;for(var i=0;i<16;i++)if(hist[i]>bc){bc=hist[i];best=i;}buf[y*W2+px]=best;}}
+
+    var phase,shapesLeft,fillsLeft,total,done,kept,smoothing;
+    function reset(){buf.fill(15);phase="draw";shapesLeft=12;fillsLeft=6;total=0;kept=false;smoothing=false;bits=0;paint();}
+    function drawShape(){var t=ri(8),cx=ri(W2),cy=ri(H2);
+      if(t===0)fillEllipse(cx,cy,4+ri(36),4+ri(28),RED);
+      else if(t===1)circle(cx,cy,6+ri(30),RED);
+      else if(t===2)border(ri(W2-20),ri(H2-16),10+ri(40),8+ri(30),RED);
+      else line(ri(W2),ri(H2),ri(W2),ri(H2),RED);}
+    function startSmooth(){phase="smooth";smoothing=true;var n=3;paint();
+      (function go(){smooth(2);n--;paint();if(n>0)setTimeout(go,140);else{phase="done";smoothing=false;paint();}})();}
+    function step(){ /* one "Holy Spirit" stroke, driven by the timing of YOUR press */
+      if(phase!=="draw"&&phase!=="fill")return;feed();total++;
+      if(phase==="draw"){drawShape();if(--shapesLeft<=0)phase="fill";}
+      else{flood(4+ri(W2-8),4+ri(H2-8),GRAYS[ri(4)]);if(--fillsLeft<=0){startSmooth();return;}}
+      paint();}
+    function paint(){
+      var d=img.data;for(var i=0;i<buf.length;i++){var rgb=RGB[buf[i]];d[i*4]=rgb[0];d[i*4+1]=rgb[1];d[i*4+2]=rgb[2];d[i*4+3]=255;}ox.putImageData(img,0,0);
+      x.imageSmoothingEnabled=false;x.clearRect(0,0,CW,CH);x.drawImage(off,0,0,W2,H2,0,0,CW,CH);
+      x.textAlign="center";
+      if(phase==="draw"||phase==="fill"){x.fillStyle="#aa0000";x.font="bold 11px Consolas,monospace";x.fillText("성령이 당신을 통해 그립니다  ·  "+total+" strokes",CW/2,16);
+        x.fillStyle="#00aa00";x.font="bold 13px Consolas,monospace";x.fillText(phase==="draw"?"SPACE / 탭을 반복해서 누르세요":"색을 채우는 중… 계속 누르세요",CW/2,CH-10);}
+      else if(phase==="smooth"){x.fillStyle="#aa00aa";x.font="bold 14px Consolas,monospace";x.fillText("성령이 다듬는 중…",CW/2,CH/2);}
+      else{x.shadowColor="#fcd34d";x.shadowBlur=6;x.fillStyle="#aa5500";x.font="bold 12px Consolas,monospace";x.fillText(kept?"✝ 보존됨 · 하나님은 살아계신다":"✝ 성령이 그렸다 · GOD IS ALIVE",CW/2,16);x.shadowBlur=0;
+        if(!kept){x.fillStyle="#0000aa";x.font="bold 11px Consolas,monospace";x.fillText("보존 / 버리고 다시",CW/2,CH-10);}}
+      x.textAlign="left";
+    }
+    reset();
+    function focused(){var w=document.getElementById("w-doodle");return w&&getComputedStyle(w).display!=="none";}
+    var pressBtn=document.getElementById("doodle-press");if(pressBtn)pressBtn.onclick=step;
+    c.addEventListener("click",function(){step();});
+    window.addEventListener("keydown",function(e){if((e.key===" "||e.code==="Space")&&focused()){e.preventDefault();step();}});
+    var keepBtn=document.getElementById("doodle-keep");if(keepBtn)keepBtn.onclick=function(){if(phase==="draw"||phase==="fill")startSmooth();else if(phase==="done"){kept=true;paint();toast("✝ 성령의 그림을 보존했습니다");}};
+    var newBtn=document.getElementById("doodle-new");if(newBtn)newBtn.onclick=reset;
+  })();
+
+  /* ===== restored: The Temple 3D (God's Third Temple) ===== */
+  (function(){
+    var c=document.getElementById("temple-cv");if(!c)return;var x=c.getContext("2d"),W=c.width,H=c.height;
+    var az=0.7,pitch=0.42,drag=false,plx,ply,moved,last=performance.now();
+    var faces=[];
+    function quad(a,b,cc,d,col){faces.push({v:[a,b,cc,d],col:col});}
+    function box(cx,cy,cz,w,h,dp,col){var x0=cx-w/2,x1=cx+w/2,y0=cy-h/2,y1=cy+h/2,z0=cz-dp/2,z1=cz+dp/2,
+      p=[[x0,y0,z0],[x1,y0,z0],[x1,y1,z0],[x0,y1,z0],[x0,y0,z1],[x1,y0,z1],[x1,y1,z1],[x0,y1,z1]];
+      quad(p[0],p[1],p[2],p[3],col);quad(p[5],p[4],p[7],p[6],col);quad(p[4],p[0],p[3],p[7],col);
+      quad(p[1],p[5],p[6],p[2],col);quad(p[4],p[5],p[1],p[0],col);quad(p[3],p[2],p[6],p[7],col);}
+    var M=[222,224,232],M2=[208,210,220],M3=[196,198,208];
+    function build(){faces=[];
+      box(0,-10,0,128,5,86,M3);box(0,-5,0,116,5,76,M2);box(0,0,0,104,5,66,M);
+      for(var i=0;i<6;i++){var cx=-42+i*16.8;box(cx,22,-24,7,40,7,M);box(cx,22,24,7,40,7,M2);}
+      box(0,45,0,112,9,68,M2);
+      var px0=-56,px1=56,py=50,pzf=-34,pzb=34,apex=70;
+      quad([px0,py,pzf],[px1,py,pzf],[0,apex,pzf],[0,apex,pzf],M3);
+      quad([px1,py,pzb],[px0,py,pzb],[0,apex,pzb],[0,apex,pzb],M3);
+      quad([px0,py,pzf],[0,apex,pzf],[0,apex,pzb],[px0,py,pzb],M2);
+      quad([0,apex,pzf],[px1,py,pzf],[px1,py,pzb],[0,apex,pzb],M);}
+    build();
+    function rot(p){var ca=Math.cos(az),sa=Math.sin(az),cp=Math.cos(pitch),sp=Math.sin(pitch);
+      var X=p[0]*ca-p[2]*sa,Z=p[0]*sa+p[2]*ca,Y=p[1]*cp-Z*sp,Z2=p[1]*sp+Z*cp;return[X,Y,Z2];}
+    function proj(r){var d=300/(r[2]+320);return{x:W/2+r[0]*d*1.5,y:H*0.66-r[1]*d*1.5,z:r[2]};}
+    function shade(col,n){var l=n[0]*0.4+n[1]*0.72-n[2]*0.56;l=Math.max(0,l)*0.62+0.4;
+      return "rgb("+Math.round(col[0]*l)+","+Math.round(col[1]*l)+","+Math.round(col[2]*l)+")";}
+    function rel(e){var r=c.getBoundingClientRect();return{x:(e.clientX-r.left)*(W/r.width),y:(e.clientY-r.top)*(H/r.height)};}
+    c.addEventListener("mousedown",function(e){drag=true;var p=rel(e);plx=p.x;ply=p.y;moved=false;});
+    c.addEventListener("mousemove",function(e){if(!drag)return;var p=rel(e);az+=(p.x-plx)*0.012;pitch=Math.max(-0.2,Math.min(1.1,pitch+(p.y-ply)*0.008));plx=p.x;ply=p.y;});
+    window.addEventListener("mouseup",function(){drag=false;});
+    var motes=[];for(var mi=0;mi<26;mi++)motes.push({x:Math.random()*W,y:Math.random()*H,s:0.6+Math.random()*1.8,v:6+Math.random()*16,t:Math.random()*6});
+    function draw(now){var dt=Math.min(0.05,(now-last)/1000);last=now;if(!drag)az+=dt*0.25;var pulse=0.5+0.5*Math.sin(now/650);
+      var sky=x.createLinearGradient(0,0,0,H);sky.addColorStop(0,"#0a0a30");sky.addColorStop(.55,"#2a1a55");sky.addColorStop(1,"#4a2a72");x.fillStyle=sky;x.fillRect(0,0,W,H);
+      /* heavenly aura from above */
+      var aura=x.createRadialGradient(W/2,-10,8,W/2,-10,W*0.8);aura.addColorStop(0,"rgba(252,211,77,"+(0.3+0.15*pulse)+")");aura.addColorStop(1,"rgba(252,211,77,0)");x.fillStyle=aura;x.fillRect(0,0,W,H);
+      /* ascending light motes (souls rising) */
+      for(var m=0;m<motes.length;m++){var mo=motes[m];mo.y-=mo.v*dt;mo.x+=Math.sin(now/900+mo.t)*8*dt;if(mo.y<0){mo.y=H;mo.x=Math.random()*W;}
+        x.globalAlpha=0.25+0.35*Math.abs(Math.sin(now/500+mo.t));x.fillStyle="#fde68a";x.fillRect(mo.x,mo.y,mo.s,mo.s);}x.globalAlpha=1;
+      /* divine light rays */
+      var ax=proj(rot([0,84,0]));x.save();x.globalAlpha=0.16;for(var a=0;a<7;a++){x.fillStyle="#fde68a";x.beginPath();x.moveTo(ax.x,ax.y);x.lineTo(ax.x-160+a*52,H);x.lineTo(ax.x-120+a*52,H);x.closePath();x.fill();}x.restore();
+      var fs=faces.map(function(f){var rv=f.v.map(rot),avz=(rv[0][2]+rv[1][2]+rv[2][2]+rv[3][2])/4;
+        var ux=rv[1][0]-rv[0][0],uy=rv[1][1]-rv[0][1],uz=rv[1][2]-rv[0][2],vx=rv[3][0]-rv[0][0],vy=rv[3][1]-rv[0][1],vz=rv[3][2]-rv[0][2];
+        var nx=uy*vz-uz*vy,ny=uz*vx-ux*vz,nz=ux*vy-uy*vx,nl=Math.hypot(nx,ny,nz)||1;
+        return{sv:rv.map(proj),z:avz,col:shade(f.col,[nx/nl,ny/nl,nz/nl])};});
+      fs.sort(function(p,q){return q.z-p.z;});
+      for(var i=0;i<fs.length;i++){var f=fs[i];x.fillStyle=f.col;x.beginPath();x.moveTo(f.sv[0].x,f.sv[0].y);for(var k=1;k<4;k++)x.lineTo(f.sv[k].x,f.sv[k].y);x.closePath();x.fill();x.strokeStyle="rgba(0,0,0,.18)";x.lineWidth=0.6;x.stroke();}
+      /* ===== divine glory above the temple — living God ===== */
+      var cr=proj(rot([0,94,0])),scl=Math.max(0.5,300/(rot([0,94,0])[2]+320));
+      /* glory halo: radiant sunburst rays */
+      x.save();x.translate(cr.x,cr.y);x.globalAlpha=0.5+0.3*pulse;
+      for(var rr2=0;rr2<16;rr2++){x.rotate(6.283/16+now/4000);x.fillStyle="rgba(252,211,77,"+(0.10+0.06*pulse)+")";x.beginPath();x.moveTo(0,0);x.lineTo(-7*scl,-(46+20*pulse)*scl);x.lineTo(7*scl,-(46+20*pulse)*scl);x.closePath();x.fill();}
+      x.restore();
+      /* radiant halo glow */
+      var halo=x.createRadialGradient(cr.x,cr.y,2,cr.x,cr.y,(34+10*pulse)*scl);halo.addColorStop(0,"rgba(255,247,200,"+(0.85*pulse+0.3)+")");halo.addColorStop(.5,"rgba(252,211,77,.35)");halo.addColorStop(1,"rgba(252,211,77,0)");x.fillStyle=halo;x.beginPath();x.arc(cr.x,cr.y,(34+10*pulse)*scl,0,6.3);x.fill();
+      /* the living cross — pulsing radiance */
+      x.shadowColor="#fde68a";x.shadowBlur=16+14*pulse;x.fillStyle="#fffbe0";
+      x.fillRect(cr.x-2.6*scl,cr.y-15*scl,5.2*scl,28*scl);x.fillRect(cr.x-9.5*scl,cr.y-7*scl,19*scl,5.2*scl);x.shadowBlur=0;
+      /* inscription — God is alive */
+      x.textAlign="center";x.shadowColor="#fcd34d";x.shadowBlur=8;x.fillStyle="#fde68a";x.font="bold 11px Consolas,monospace";
+      x.fillText("하나님은 살아계신다 · GOD IS ALIVE ✝",W/2,H-8);x.shadowBlur=0;x.textAlign="left";
+      requestAnimationFrame(draw);
+    }
+    draw(performance.now());
+  })();
+
+  /* ===== restored: God Song — "the Holy Spirit composes through you" (faithful to GodSong.HC) ===== */
+  (function(){
+    var c=document.getElementById("song-cv");if(!c)return;var x=c.getContext("2d"),W=c.width,H=c.height;
+    /* sacred scale (C major, 10 tones C4..E5) */
+    var SCALE=[261.63,293.66,329.63,349.23,392.0,440.0,493.88,523.25,587.33,659.25],NN=SCALE.length;
+    var AC=null;
+    function tone(f,d,vol){try{AC=AC||new (window.AudioContext||window.webkitAudioContext)();if(AC.state==="suspended")AC.resume();
+      var o=AC.createOscillator(),o2=AC.createOscillator(),g=AC.createGain();o.type="triangle";o2.type="sine";o.frequency.value=f;o2.frequency.value=f*2.001;
+      o.connect(g);o2.connect(g);g.connect(AC.destination);var t=AC.currentTime;g.gain.setValueAtTime(0,t);g.gain.linearRampToValueAtTime(vol||0.05,t+0.02);g.gain.exponentialRampToValueAtTime(0.0001,t+d);o.start(t);o2.start(t);o.stop(t+d);o2.stop(t+d);}catch(e){}}
+    /* divine RNG perturbed by the timing of YOUR press (KbdMsEvtTime entropy) */
+    var seed=0x5bd1e995,lastT=performance.now();
+    function feed(){var t=performance.now(),dt=t-lastT;lastT=t;seed=(seed^Math.floor((t*1000+dt*5779)>>>0))>>>0;seed=(Math.imul(seed,1664525)+1013904223)>>>0;}
+    function rnd(){seed=(Math.imul(seed,1664525)+1013904223)>>>0;return seed/4294967296;}
+    var NEED=12,phrase,song,phase,idx,acc,tempo,playing,parts,last=performance.now();
+    function reset(){phrase=[];song=[];phase="compose";idx=0;acc=0;tempo=3.2;playing=true;parts=[];}
+    reset();
+    function give(){ /* one divine note from your timing */
+      if(phase!=="compose")return;feed();var n=Math.floor(rnd()*NN),d=rnd()<0.35?0.5:1;phrase.push({n:n,d:d});
+      tone(SCALE[n],0.45,0.06);spark(phrase.length-1,n,phrase.length);
+      if(phrase.length>=NEED){var A=phrase.slice(0,NEED/2),B=phrase.slice(NEED/2);song=A.concat(A,B,B);phase="play";idx=0;acc=0;
+        tone(SCALE[NN-1],0.5,0.05);}
+    }
+    function spark(i,n,len){for(var k=0;k<7;k++)parts.push({i:i,n:n,len:len,a:Math.random()*6.28,r:0,life:1});}
+    function loop(now){var dt=Math.min(0.05,(now-last)/1000);last=now;
+      if(phase==="play"&&playing&&song.length){acc+=dt;var cur=song[idx];if(acc>=cur.d/tempo){acc-=cur.d/tempo;tone(SCALE[cur.n],0.42,0.05);spark(idx,cur.n,song.length);idx=(idx+1)%song.length;}}
+      for(var p=parts.length-1;p>=0;p--){parts[p].r+=120*dt;parts[p].life-=dt*1.4;if(parts[p].life<=0)parts.splice(p,1);}
+      draw(now);requestAnimationFrame(loop);
+    }
+    function noteXY(i,n,len){return{x:(i+0.5)*(W/len),y:H-8-(n+1)/NN*(H-16)};}
+    function draw(now){
+      var bg=x.createLinearGradient(0,0,0,H);bg.addColorStop(0,"#0b1640");bg.addColorStop(1,"#04102a");x.fillStyle=bg;x.fillRect(0,0,W,H);
+      /* heavenly golden glow at top */
+      x.save();x.globalAlpha=0.5+0.2*Math.sin(now/700);var gg=x.createRadialGradient(W/2,-20,5,W/2,-20,W*0.7);gg.addColorStop(0,"rgba(252,211,77,.5)");gg.addColorStop(1,"rgba(252,211,77,0)");x.fillStyle=gg;x.fillRect(0,0,W,H*0.6);x.restore();
+      var list=phase==="play"?song:phrase,len=phase==="play"?song.length:NEED,bw=W/len;
+      for(var i=0;i<list.length;i++){var s=list[i],bh=(s.n+1)/NN*(H-14),on=phase==="play"&&i===idx&&playing,half=i<len/2;
+        var col=on?"#fff7c0":(half?"#5eead4":"#22d3ee");x.shadowColor=on?"#fcd34d":(half?"#5eead4":"#22d3ee");x.shadowBlur=on?16:5;
+        var gr=x.createLinearGradient(0,H-bh,0,H);gr.addColorStop(0,col);gr.addColorStop(1,"rgba(0,0,0,.2)");x.fillStyle=gr;
+        x.fillRect(i*bw+1.5,H-bh,bw-3,bh);x.shadowBlur=0;
+        if(on){x.fillStyle="rgba(255,255,255,.9)";x.fillRect(i*bw+1.5,H-bh-2,bw-3,2);}}
+      /* playhead divine beam */
+      if(phase==="play"){var px=(idx+0.5)*bw;x.save();x.globalAlpha=0.3;var bm=x.createLinearGradient(px,0,px,H);bm.addColorStop(0,"rgba(252,211,77,.0)");bm.addColorStop(1,"rgba(252,211,77,.6)");x.fillStyle=bm;x.fillRect(px-3,0,6,H);x.restore();}
+      /* ascending divine sparks */
+      for(var p=0;p<parts.length;p++){var q=parts[p],pos=noteXY(q.i,q.n,q.len),px2=pos.x+Math.cos(q.a)*q.r*0.4,py2=pos.y-q.r;
+        x.globalAlpha=Math.max(0,q.life);x.fillStyle="#fde68a";x.shadowColor="#fcd34d";x.shadowBlur=8;x.fillRect(px2,py2,2.4,2.4);x.shadowBlur=0;}
+      x.globalAlpha=1;
+      x.textAlign="center";
+      if(phase==="compose"){x.fillStyle="#fcd34d";x.font="bold 11px Consolas,monospace";x.fillText("성령이 음을 주십니다  ·  "+phrase.length+" / "+NEED,W/2,14);
+        x.fillStyle="#5eead4";x.font="bold 12px Consolas,monospace";if((now/600|0)%2===0)x.fillText("SPACE / 탭을 눌러 작곡하세요",W/2,H-9);}
+      else{x.fillStyle="#fcd34d";x.font="bold 11px Consolas,monospace";x.fillText("♪ 찬송이 흐릅니다  ·  하나님은 살아계신다  ✝",W/2,14);}
+      x.textAlign="left";
+    }
+    loop(performance.now());
+    function focused(){var w=document.getElementById("w-song");return w&&getComputedStyle(w).display!=="none";}
+    var pb=document.getElementById("song-press");if(pb)pb.onclick=give;
+    c.addEventListener("click",give);
+    window.addEventListener("keydown",function(e){if((e.key===" "||e.code==="Space")&&focused()&&phase==="compose"){e.preventDefault();give();}});
+    var play=document.getElementById("song-play");if(play)play.onclick=function(){playing=!playing;if(playing&&AC&&AC.state==="suspended")AC.resume();};
+    var nb=document.getElementById("song-new");if(nb)nb.onclick=function(){reset();};
+  })();
+
+  /* ===== worship BGM — "Amazing Grace" as a warm church-organ pad: additive organ
+          voices + sustained chords + bass + cathedral reverb (not 8-bit) ===== */
+  (function(){
+    var AC=window.AudioContext||window.webkitAudioContext;if(!AC)return;
+    var ctx=null,master=null,mix=null,dry=null,wet=null,conv=null,comp=null,on=true,timer=null,mi=0,VOL=1;
+    /* Amazing Grace (key C). [freq,beats] melody + per-step chord, so harmony sustains under it */
+    var MEL=[[196.00,1],[261.63,2],[329.63,1],[261.63,2],[329.63,1],[293.66,3],
+             [261.63,2],[220.00,1],[196.00,3],[196.00,1],[261.63,2],[329.63,1],
+             [261.63,2],[329.63,1],[293.66,3],[392.00,3]];
+    var CH  =["C","C","C","C","C","G","C","F","C","C","C","C","C","C","G","C"];
+    var CHORD={C:[130.81,164.81,196.00],G:[98.00,146.83,196.00],F:[87.31,130.81,174.61]};
+    var BASS ={C:65.41,G:49.00,F:43.65};
+    var BEAT=0.66; /* slow, worshipful */
+    /* group consecutive same-chord steps so the chord swells once and holds */
+    var segStart=[],segBeats=[];
+    (function(){var i=0;while(i<MEL.length){var nm=CH[i],j=i,b=0;while(j<MEL.length&&CH[j]===nm){b+=MEL[j][1];j++;}
+      segStart[i]=true;segBeats[i]=b;for(var k=i+1;k<j;k++){segStart[k]=false;segBeats[k]=0;}i=j;}})();
+
+    function makeIR(sec,decay){var n=Math.floor(ctx.sampleRate*sec),buf=ctx.createBuffer(2,n,ctx.sampleRate);
+      for(var ch=0;ch<2;ch++){var d=buf.getChannelData(ch);for(var k=0;k<n;k++)d[k]=(Math.random()*2-1)*Math.pow(1-k/n,decay);}return buf;}
+    function ensure(){if(ctx)return;ctx=new AC();
+      master=ctx.createGain();master.gain.value=0;       /* on/off envelope only -> off is truly silent */
+      comp=ctx.createDynamicsCompressor();               /* glue + safety against clipping */
+      master.connect(comp);comp.connect(ctx.destination);
+      mix=ctx.createGain();mix.gain.value=1;mix.connect(master);
+      dry=ctx.createGain();dry.gain.value=0.82;dry.connect(mix);
+      conv=ctx.createConvolver();conv.buffer=makeIR(3.6,2.6); /* cathedral hall */
+      wet=ctx.createGain();wet.gain.value=0.62;conv.connect(wet);wet.connect(mix);
+      /* slow breathing tremolo on the mix (not master) for an organ-in-a-hall feel */
+      var lfo=ctx.createOscillator(),la=ctx.createGain();
+      lfo.frequency.value=0.18;la.gain.value=0.06;lfo.connect(la);la.connect(mix.gain);lfo.start();}
+    var PARTIALS=[[1,1],[2,0.5],[3,0.26],[4,0.14],[6,0.07]]; /* organ drawbars */
+    function voice(freq,dur,peak,t0){
+      var vg=ctx.createGain();vg.gain.value=0.0001;
+      var lp=ctx.createBiquadFilter();lp.type="lowpass";lp.frequency.value=Math.min(5200,freq*7+700);lp.Q.value=0.2;
+      vg.connect(lp);lp.connect(dry);lp.connect(conv);
+      var atk=Math.min(0.32,dur*0.35),rel=Math.min(1.5,dur*0.7+0.45);
+      vg.gain.setValueAtTime(0.0001,t0);
+      vg.gain.linearRampToValueAtTime(peak,t0+atk);
+      vg.gain.setValueAtTime(peak*0.9,t0+dur*0.72);
+      vg.gain.exponentialRampToValueAtTime(0.0006,t0+dur+rel);
+      PARTIALS.forEach(function(p){var o=ctx.createOscillator();o.type="sine";o.frequency.value=freq*p[0];o.detune.value=Math.random()*5-2.5;
+        var pg=ctx.createGain();pg.gain.value=p[1];o.connect(pg);pg.connect(vg);o.start(t0);o.stop(t0+dur+rel+0.1);});
+    }
+    function step(){if(!on||!ctx){timer=null;return;}
+      var idx=mi%MEL.length,m=MEL[idx],t0=ctx.currentTime+0.06,beats=m[1];
+      voice(m[0],beats*BEAT,0.15,t0);                                    /* melody */
+      if(segStart[idx]){var hold=segBeats[idx]*BEAT;
+        (CHORD[CH[idx]]||[]).forEach(function(f){voice(f,hold,0.072,t0);}); /* chord pad */
+        voice(BASS[CH[idx]]||65.41,hold,0.13,t0);}                        /* organ bass */
+      mi++;timer=setTimeout(step,beats*BEAT*1000);}
+    function setOn(v){on=v;var b=document.getElementById("hymn-btn");
+      if(on){ensure();if(ctx.state==="suspended")ctx.resume();master.gain.cancelScheduledValues(ctx.currentTime);
+        master.gain.setValueAtTime(Math.max(0.0001,master.gain.value),ctx.currentTime);master.gain.linearRampToValueAtTime(0.3*VOL,ctx.currentTime+2.2);
+        if(!timer)step();if(b){b.textContent="♪ Hymn";b.classList.add("active");}}
+      else{if(master&&ctx)master.gain.linearRampToValueAtTime(0,ctx.currentTime+0.9);clearTimeout(timer);timer=null;if(b){b.textContent="♪ Hymn ✕";b.classList.remove("active");}}}
+    function first(){if(on)setOn(true);window.removeEventListener("pointerdown",first);window.removeEventListener("keydown",first);}
+    window.addEventListener("pointerdown",first);window.addEventListener("keydown",first);
+    var hb=document.getElementById("hymn-btn");if(hb)hb.addEventListener("click",function(e){e.stopPropagation();setOn(!on);});
+    window.__hymn=function(){setOn(!on);return on;};
+    window.__hymnState=function(){return on;};
+    window.__hymnVol=function(v){VOL=Math.max(0,Math.min(1,v));if(on&&ctx&&master){master.gain.cancelScheduledValues(ctx.currentTime);master.gain.linearRampToValueAtTime(0.3*VOL,ctx.currentTime+0.25);}return VOL;};
+  })();
+
+  /* ===== ascending light particles — souls of light rising over the whole desktop ===== */
+  (function(){
+    var c=document.getElementById("divine-motes");if(!c)return;var x=c.getContext("2d");
+    function resize(){c.width=window.innerWidth;c.height=Math.max(window.innerHeight,document.documentElement.clientHeight);}
+    resize();window.addEventListener("resize",resize);
+    var N=58,motes=[];function mk(reset){return{x:Math.random()*c.width,y:reset?c.height+Math.random()*40:Math.random()*c.height,r:0.6+Math.random()*1.9,v:7+Math.random()*22,t:Math.random()*6.28,sw:0.4+Math.random()*0.8};}
+    for(var i=0;i<N;i++)motes.push(mk(false));
+    var last=performance.now();
+    function loop(now){var dt=Math.min(0.05,(now-last)/1000);last=now;
+      x.clearRect(0,0,c.width,c.height);
+      for(var i=0;i<N;i++){var m=motes[i];m.y-=m.v*dt;m.x+=Math.sin(now/1000*m.sw+m.t)*11*dt;
+        if(m.y<-12){m.y=c.height+12;m.x=Math.random()*c.width;}
+        var tw=0.25+0.55*Math.abs(Math.sin(now/600*m.sw+m.t));x.globalAlpha=tw*0.55;
+        if(m.r>1.45){x.shadowColor="#fcd34d";x.shadowBlur=9;}else x.shadowBlur=0;
+        x.fillStyle=m.r>1.45?"#fff3c0":"#fde68a";x.beginPath();x.arc(m.x,m.y,m.r,0,6.3);x.fill();}
+      x.shadowBlur=0;x.globalAlpha=1;requestAnimationFrame(loop);
+    }
+    requestAnimationFrame(loop);
+  })();
+
+  /* ---------- maximize/restore + resizable windows ---------- */
+  document.querySelectorAll(".win").forEach(function(w){
+    /* maximize / restore button in the title bar */
+    var title=w.querySelector(".title");
+    if(title){var mx=document.createElement("span");mx.className="mx";mx.textContent="□";mx.title="최대화 / 원위치";
+      var xb=title.querySelector(".x");title.insertBefore(mx,xb||null);
+      var saved=null;
+      mx.addEventListener("mousedown",function(e){e.stopPropagation();});
+      mx.addEventListener("pointerdown",function(e){e.stopPropagation();});
+      mx.addEventListener("click",function(e){e.stopPropagation();
+        if(saved){w.style.left=saved.l;w.style.top=saved.t;w.style.right=saved.r;w.style.width=saved.w;w.style.height=saved.h;saved=null;mx.textContent="□";}
+        else{saved={l:w.style.left,t:w.style.top,r:w.style.right,w:w.style.width,h:w.style.height};
+          w.style.right="auto";w.style.left="4px";w.style.top="24px";w.style.width=(window.innerWidth-8)+"px";w.style.height=(window.innerHeight-54)+"px";mx.textContent="❐";if(typeof focusWin==="function")focusWin(w);}});}
+    /* resize grip */
+    var grip=document.createElement("div");grip.className="resz";grip.title="크기 조절 (드래그)";w.appendChild(grip);
+    var rz=false,sx,sy,sw,sh;
+    grip.addEventListener("pointerdown",function(e){e.preventDefault();e.stopPropagation();rz=true;
+      try{grip.setPointerCapture(e.pointerId);}catch(_){}
+      if(typeof focusWin==="function")focusWin(w);
+      var r=w.getBoundingClientRect();w.style.right="auto";w.style.left=r.left+"px";w.style.top=r.top+"px";
+      sx=e.clientX;sy=e.clientY;sw=r.width;sh=r.height;});
+    grip.addEventListener("pointermove",function(e){if(!rz)return;
+      w.style.width=Math.max(170,Math.min(window.innerWidth-12,sw+(e.clientX-sx)))+"px";
+      w.style.height=Math.max(92,Math.min(window.innerHeight-30,sh+(e.clientY-sy)))+"px";});
+    function end(){rz=false;}grip.addEventListener("pointerup",end);grip.addEventListener("pointercancel",end);
+  });
+
+  /* ============ MOBILE VERSION — phone home screen ============ */
+  /* divine/system windows surfaced on the mobile home grid */
+  var MOBILE_SYS=[
+    ["w-god","✝","God Word"],["w-bible","📖","Bible"],["w-temple","⛪","Temple 3D"],["w-song","🎵","God Song"],
+    ["w-vision","📜","Vision"],["w-fish","🐟","Aquarium"],["w-doodle","✶","God Doodle"],["w-life","🧫","Life"],
+    ["w-games","🎮","Games"],["w-ai","🤖","AI Chat"],["w-holyc","⌨","HolyC"],["w-dir","🗂","Files"],
+    ["w-models","🧠","Models"],["w-settings","⚙","Settings"],["w-dev","🕯","개발자의 말"]
+  ];
+  function mhIcon(emoji,label,fn){
+    var d=document.createElement("div");d.className="mh-ico";
+    var e=document.createElement("div");e.className="e";e.textContent=emoji;
+    var l=document.createElement("div");l.className="l";l.textContent=label;
+    d.appendChild(e);d.appendChild(l);
+    d.addEventListener("click",fn);
+    return d;
+  }
+  function mhBuild(){
+    var g=document.getElementById("mh-grid");
+    if(!g||g.childElementCount)return;
+    MOBILE_SYS.forEach(function(s){
+      if(!document.getElementById(s[0]))return;
+      g.appendChild(mhIcon(s[1],s[2],function(){openSysFull(s[0],s[2]);}));
+    });
+    (window.__ALL_APPS||[]).forEach(function(a){
+      g.appendChild(mhIcon(a[1],a[2],function(){openAppFull(a[0],a[2]);}));
+    });
+  }
+  function setMbTitle(n){var t=document.getElementById("mb-title");if(t)t.textContent=n||"";}
+  function closeMobFull(){
+    document.querySelectorAll(".win.mobileopen").forEach(function(w){w.classList.remove("mobileopen");});
+    document.body.classList.remove("appopen");
+  }
+  function openSysFull(id,name){
+    closeMobFull();
+    var w=document.getElementById(id);if(!w)return;
+    w.style.display="flex";w.classList.add("mobileopen");
+    document.body.classList.add("appopen");setMbTitle(name);
+    focusWin(w);
+  }
+  function openAppFull(key,name){
+    closeMobFull();
+    openApp(key,name);                       /* sets iframe src + opens w-app */
+    var w=document.getElementById("w-app");
+    if(w){w.classList.add("mobileopen");document.body.classList.add("appopen");}
+    setMbTitle(name);
+  }
+  /* the in-window close [✕] buttons should also drop fullscreen on mobile */
+  document.querySelectorAll("[data-close]").forEach(function(b){
+    b.addEventListener("click",function(){if(document.body.classList.contains("mobile"))closeMobFull();});
+  });
+  var mbBack=document.getElementById("mb-back");
+  if(mbBack)mbBack.addEventListener("click",closeMobFull);
+  ["mb-hymn","mb-hymn2"].forEach(function(idd){
+    var b=document.getElementById(idd);
+    if(b)b.addEventListener("click",function(e){e.stopPropagation();if(window.__hymn)window.__hymn();});
+  });
+  var MOBILE_MQ=window.matchMedia("(max-width:640px)");
+  function applyMode(){
+    var m=MOBILE_MQ.matches;
+    document.body.classList.toggle("mobile",m);
+    if(m)mhBuild();else closeMobFull();
+  }
+  applyMode();
+  if(MOBILE_MQ.addEventListener)MOBILE_MQ.addEventListener("change",applyMode);
+  else if(MOBILE_MQ.addListener)MOBILE_MQ.addListener(applyMode);
+  window.addEventListener("resize",applyMode);
+  window.addEventListener("orientationchange",applyMode);
+
+  syncTask();
+})();
+</script>
+</body>
+</html>

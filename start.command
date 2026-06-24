@@ -1,0 +1,4 @@
+#!/bin/bash
+# TempleOS 2026 — start a local server and open the landing page (macOS)
+cd "$(dirname "$0")"
+(python3 -m http.server 8000 &) ; sleep 1 ; open http://localhost:8000/

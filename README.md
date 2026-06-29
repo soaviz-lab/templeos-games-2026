@@ -14,7 +14,7 @@ Terry A. Davis 가 HolyC로 손수 만든 게임과 도구들을 **원본 로직
 </p>
 
 <p align="center">
-  <b>▶ Live demo:</b> <a href="https://soaviz-lab.github.io/templeos-games-2026/"><code>soaviz-lab.github.io/templeos-games-2026</code></a>
+  <b>▶ Live demo:</b> <a href="https://templeos-games-2026.vercel.app/"><code>templeos-games-2026.vercel.app</code></a>
   &nbsp;·&nbsp; <b>Source:</b> <a href="https://github.com/soaviz-lab/templeos-games-2026">github.com/soaviz-lab/templeos-games-2026</a>
   <br><code>public domain · offline · no telemetry</code>
 </p>
@@ -25,7 +25,7 @@ Terry A. Davis 가 HolyC로 손수 만든 게임과 도구들을 **원본 로직
 
 ## ▶ Try it / 실행 방법
 
-**Best:** open the **[live demo](https://soaviz-lab.github.io/templeos-games-2026/)** (everything runs in‑page, no install). No build step, no dependencies, no network.
+**Best:** open the **[live demo](https://templeos-games-2026.vercel.app/)** (everything runs in‑page, no install). No build step, no dependencies, no network.
 
 You can also run it locally — open the HTML files in any modern browser:
 

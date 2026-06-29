@@ -25,8 +25,14 @@
   .scan{position:fixed;inset:0;z-index:2;pointer-events:none;opacity:.5;
     background:repeating-linear-gradient(0deg,rgba(0,0,0,.16) 0,rgba(0,0,0,.16) 1px,transparent 2px,transparent 3px);}
   .wrap{position:relative;z-index:3;max-width:640px;}
-  .titlecard{width:clamp(300px,86vw,580px);height:auto;display:block;margin:2px auto 16px;border-radius:16px;
-    filter:drop-shadow(0 14px 32px rgba(0,40,70,.45));}
+  .titlewrap{position:relative;display:inline-block;width:clamp(300px,86vw,580px);margin:2px auto 16px;line-height:0;}
+  .titlecard{display:block;width:100%;height:auto;border-radius:16px;filter:drop-shadow(0 14px 32px rgba(0,40,70,.45));}
+  .spk{position:absolute;transform:translate(-50%,-50%) scale(0);background:#fff;pointer-events:none;opacity:0;
+    clip-path:polygon(50% 0%,59% 41%,100% 50%,59% 59%,50% 100%,41% 59%,0% 50%,41% 41%);
+    filter:drop-shadow(0 0 5px rgba(255,255,255,.95)) drop-shadow(0 0 11px rgba(150,220,255,.85));
+    animation-name:twinkle;animation-duration:2.6s;animation-timing-function:ease-in-out;animation-iteration-count:infinite;}
+  @keyframes twinkle{0%,100%{transform:translate(-50%,-50%) scale(.1) rotate(0deg);opacity:0;}50%{transform:translate(-50%,-50%) scale(1) rotate(45deg);opacity:1;}}
+  @media (prefers-reduced-motion:reduce){.spk{animation:none;opacity:.65;transform:translate(-50%,-50%) scale(.7) rotate(45deg);}}
   .visually-hidden{position:absolute!important;width:1px;height:1px;margin:-1px;padding:0;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap;border:0;}
   .cap{color:#aeb8d8;font-size:14px;line-height:1.6;margin:8px 0 4px;}
   .cap em{color:#ffe9b8;font-style:italic;}
@@ -68,7 +74,15 @@
   <div class="aurora" aria-hidden="true"></div>
   <div class="scan" aria-hidden="true"></div>
   <main class="wrap">
-    <img class="titlecard" src="intro.png" alt="TempleOS — 2026 Edition">
+    <div class="titlewrap">
+      <img class="titlecard" src="intro.png" alt="TempleOS — 2026 Edition">
+      <span class="spk" style="left:74%;top:13%;width:26px;height:26px;animation-duration:2.4s;animation-delay:0s"></span>
+      <span class="spk" style="left:68.5%;top:21%;width:11px;height:11px;animation-duration:2.2s;animation-delay:1.1s"></span>
+      <span class="spk" style="left:63%;top:30%;width:16px;height:16px;animation-duration:3.1s;animation-delay:.6s"></span>
+      <span class="spk" style="left:55%;top:45%;width:13px;height:13px;animation-duration:2.7s;animation-delay:1.5s"></span>
+      <span class="spk" style="left:47%;top:60%;width:18px;height:18px;animation-duration:3.4s;animation-delay:.35s"></span>
+      <span class="spk" style="left:42%;top:73%;width:12px;height:12px;animation-duration:2.9s;animation-delay:1.9s"></span>
+    </div>
     <h1 class="visually-hidden">TempleOS 2026 — 2026 Edition</h1>
     <div class="cap"><em>로직은 원본, 그래픽은 미래 &mdash; 그를 추모하며</em><br>Terry A. Davis의 HolyC 게임과 도구를 2026년의 감각으로 다시 빚다</div>
     <div class="dates">In memory of <b>Terry A. Davis</b> &middot; 1969&ndash;2018 &middot; creator of TempleOS</div>

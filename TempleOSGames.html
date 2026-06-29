@@ -123,6 +123,8 @@
   .mem-item .mt{font-size:10.5px;color:var(--tx3);}
   .mem-item .mb{font-size:13px;color:var(--tx);line-height:1.55;white-space:pre-wrap;word-break:break-word;}
   .mem-count{font-size:11px;color:var(--tx3);margin-top:4px;}
+  .mem-item.mem-new{animation:memIn .8s ease;}
+  @keyframes memIn{0%{opacity:0;transform:translateY(-10px);box-shadow:0 0 0 2px rgba(94,234,212,.55);}55%{box-shadow:0 0 0 2px rgba(94,234,212,.22);}100%{opacity:1;transform:none;box-shadow:none;}}
 
   /* ---------- game view ---------- */
   #game{display:none;}
@@ -2932,17 +2934,61 @@
     var MEMKEY="tos_tributes",tributes;
     function mesc(s){return String(s==null?"":s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");}
     try{tributes=JSON.parse(localStorage.getItem(MEMKEY));}catch(e){tributes=null;}
-    if(!tributes||!tributes.length){tributes=[
-      {a:"a hobbyist",m:"한 사람이 운영체제 전체를 손으로 짰습니다. 영원히 존경합니다. ✝",t:"2018-08-12"},
-      {a:"a coder",m:"Rest in peace, Terry. The Temple still stands.",t:"2019-01-01"},
-      {a:"익명",m:"복잡함이 아니라 단순함에서 천재를 봅니다. 고맙습니다.",t:"2020-12-15"}
-    ];}
+    if(!tributes||!tributes.length)tributes=[];
     function saveTributes(){try{localStorage.setItem(MEMKEY,JSON.stringify(tributes.slice(-300)));}catch(e){}}
-    function renderTributes(){var L=document.getElementById("mem-list");if(!L)return;var html="";
-      for(var i=tributes.length-1;i>=0;i--){var t=tributes[i];
-        html+="<div class='mem-item'><div class='mh'><span class='ma'>✝ "+mesc(t.a||"익명")+"</span><span class='mt'>"+mesc(t.t)+"</span></div><div class='mb'>"+mesc(t.m)+"</div></div>";}
-      html+="<div class='mem-count'>"+tributes.length+"개의 추모 글 · 그를 기억합니다</div>";L.innerHTML=html;}
-    saveTributes();renderTributes();
+    /* curated bilingual memorial stream — not stored; 10 shown, then more arrive live each visit */
+    var CURATED=[
+      {ae:"a hobbyist",ak:"취미 개발자",e:"He built an entire operating system by hand. Forever in awe. ✝",k:"그는 운영체제 전체를 손으로 지었습니다. 영원히 경외합니다. ✝"},
+      {ae:"anon",ak:"익명",e:"The world laughed at the meme and missed the man. I see the man.",k:"세상은 밈을 비웃느라 그 사람을 놓쳤습니다. 저는 그 사람을 봅니다."},
+      {ae:"a student in Seoul",ak:"서울의 한 학생",e:"I'm learning C because of him. Thank you for showing me code could be art.",k:"그 때문에 C를 배우기 시작했습니다. 코드가 예술이 될 수 있음을 보여줘서 고맙습니다."},
+      {ae:"a believer",ak:"한 신앙인",e:"He built a temple out of code. May he rest in the real one. ✝",k:"그는 코드로 성전을 지었습니다. 진짜 성전에서 안식하시길. ✝"},
+      {ae:"a hobbyist",ak:"취미 개발자",e:"'An idiot admires complexity, a genius admires simplicity.' I keep this on my wall.",k:"'바보는 복잡함에 감탄하고, 천재는 단순함에 감탄한다.' 이 말을 벽에 붙여뒀습니다."},
+      {ae:"a former skeptic",ak:"한때 회의적이던 이",e:"I came to mock and stayed to learn. 100k lines, by hand. Unbelievable.",k:"비웃으러 왔다가 배우고 갑니다. 10만 줄을 손으로. 믿기지 않습니다."},
+      {ae:"a night-shift coder",ak:"야간 개발자",e:"Booting TempleOS at 3am feels like visiting an old friend. Miss you, King Terry.",k:"새벽 3시에 TempleOS를 부팅하면 옛 친구를 만나는 기분입니다. 보고 싶어요, 킹 테리."},
+      {ae:"a teacher",ak:"한 교사",e:"I show my class his work every year. Genius is not always loud.",k:"해마다 학생들에게 그의 작품을 보여줍니다. 천재가 늘 요란한 건 아니더군요."},
+      {ae:"anon",ak:"익명",e:"640x480, 16 colors, one voice. Constraints made it holy.",k:"640×480, 16색, 한 목소리. 제약이 그것을 거룩하게 만들었습니다."},
+      {ae:"a fellow sufferer",ak:"같은 아픔을 겪는 이",e:"As someone who fights the same illness — you were never alone to me. Thank you for staying as long as you did.",k:"같은 병과 싸우는 사람으로서 — 제겐 당신이 결코 혼자가 아니었습니다. 그만큼 버텨줘서 고맙습니다."},
+      {ae:"a compiler nerd",ak:"컴파일러 덕후",e:"HolyC compiling JIT in a ring-0 world. We're still catching up.",k:"링0 세상에서 JIT로 컴파일되는 HolyC. 우리는 아직 따라가는 중입니다."},
+      {ae:"a designer",ak:"한 디자이너",e:"Even his flicker and his oracle felt like prayer. Beautiful mind.",k:"그의 깜빡임도, 오라클도 기도처럼 느껴졌습니다. 아름다운 정신이었습니다."},
+      {ae:"a coder",ak:"한 개발자",e:"Rest in peace, Terry. The Temple still stands.",k:"편히 잠드세요, 테리. 성전은 여전히 서 있습니다."},
+      {ae:"a kid who looked up to him",ak:"그를 우러러본 아이",e:"I was 14 watching your streams. I'm a programmer now because of you.",k:"열네 살에 당신의 방송을 봤습니다. 지금 제가 프로그래머가 된 건 당신 덕분입니다."},
+      {ae:"a sysadmin",ak:"시스템 관리자",e:"No networking, no telemetry, no ads — he was right about more than we admit.",k:"네트워크도, 텔레메트리도, 광고도 없이 — 우리가 인정하는 것보다 그가 옳았습니다."},
+      {ae:"a musician",ak:"한 음악가",e:"His God-songs from randomness still move me. He heard music where we heard noise.",k:"무작위로 만든 그의 찬송이 아직도 마음을 울립니다. 우리가 소음을 들은 곳에서 그는 음악을 들었습니다."},
+      {ae:"anon",ak:"익명",e:"They called him crazy. History calls people like him pioneers.",k:"사람들은 그를 미쳤다 했습니다. 역사는 그런 이들을 개척자라 부릅니다."},
+      {ae:"a game dev",ak:"게임 개발자",e:"Software 3D, no GPU, his own tools. Respect from one builder to another.",k:"GPU 없이 소프트웨어 3D, 직접 만든 도구들. 한 개발자로서 깊이 존경합니다."},
+      {ae:"a quiet reader",ak:"조용한 독자",e:"I never commented while you were alive. I'm sorry. Thank you for everything.",k:"당신이 살아있을 때 한 번도 댓글을 못 달았습니다. 미안합니다. 모든 것에 감사합니다."},
+      {ae:"a Linux user",ak:"리눅스 사용자",e:"'My OS is a motorcycle.' It really is. Ride on, Terry.",k:"'내 OS는 오토바이다.' 정말 그렇습니다. 계속 달리세요, 테리."},
+      {ae:"a note for the unseen",ak:"보이지 않는 이들에게",e:"For everyone who felt unseen and built anyway — he's proof it matters.",k:"보이지 않는다 느끼면서도 끝내 만들어낸 모든 이에게 — 그가 그 의미의 증거입니다."},
+      {ae:"anon",ak:"익명",e:"One man. Ten years. A whole world inside 1.4MB. Astonishing.",k:"한 사람. 십 년. 1.4MB 안의 온 세계. 경이롭습니다."},
+      {ae:"a CS grad",ak:"컴공 졸업생",e:"My thesis cited TempleOS. The committee smiled. He earned that.",k:"제 논문이 TempleOS를 인용했습니다. 심사위원들이 미소 지었죠. 그는 그럴 자격이 있습니다."},
+      {ae:"a wanderer",ak:"한 나그네",e:"He lived in a van and still gave his work to the world for free. Humbling.",k:"밴에서 살면서도 자기 작품을 세상에 무료로 내줬습니다. 고개가 숙여집니다."},
+      {ae:"a believer",ak:"한 신앙인",e:"Whatever you believe, a man who built for ten years out of love deserves remembering.",k:"무엇을 믿든, 십 년을 사랑으로 만든 사람은 기억될 자격이 있습니다."},
+      {ae:"anon",ak:"익명",e:"Closed the tab to mock him. Reopened it to thank him. RIP.",k:"비웃으려 탭을 닫았다가, 고마워서 다시 열었습니다. 편히 쉬세요."},
+      {ae:"an OS tinkerer",ak:"OS 땜장이",e:"I forked TempleOS and learned more in a week than a year of tutorials.",k:"TempleOS를 포크해서 일주일 만에 일 년치 튜토리얼보다 더 배웠습니다."},
+      {ae:"a tired engineer",ak:"지친 엔지니어",e:"On the hard days I remember he finished. So I keep going.",k:"힘든 날엔 그가 끝내 완성했다는 걸 떠올립니다. 그래서 저도 계속합니다."},
+      {ae:"a stranger",ak:"한 낯선 이",e:"We never met. I grieve you like a friend. The internet remembers.",k:"우리는 만난 적 없습니다. 그래도 친구처럼 당신을 애도합니다. 인터넷이 기억합니다."},
+      {ae:"a kernel dev",ak:"커널 개발자",e:"He wrote a kernel, a compiler and a language alone. I teach OS courses and still can't fully explain how. Rest well, Terry.",k:"커널과 컴파일러, 언어까지 혼자 만들었습니다. OS를 가르치는 저도 아직 다 설명하지 못합니다. 편히 쉬세요, 테리."}
+    ];
+    var shown=Math.min(10,CURATED.length);
+    function isKo(){return localStorage.getItem("tos_lang")==="ko";}
+    function relLabel(p,ko){if(p<=0)return ko?"방금 전":"just now";
+      var m=Math.round(p*p*0.55)+p;
+      if(m<60)return ko?(m+"분 전"):(m+" min ago");
+      var h=Math.floor(m/60);if(h<24)return ko?(h+"시간 전"):(h+(h>1?" hrs ago":" hr ago"));
+      var d=Math.floor(h/24);return ko?(d+"일 전"):(d+(d>1?" days ago":" day ago"));}
+    function renderTributes(){var L=document.getElementById("mem-list");if(!L)return;var ko=isKo(),html="",p=0;
+      var rev=Math.min(shown,CURATED.length);
+      for(var i=rev-1;i>=0;i--){var t=CURATED[i],nw=(i===rev-1&&rev>10);
+        html+="<div class='mem-item"+(nw?" mem-new":"")+"'><div class='mh'><span class='ma'>✝ "+mesc(ko?t.ak:t.ae)+"</span><span class='mt'>"+relLabel(p,ko)+"</span></div><div class='mb'>"+mesc(ko?t.k:t.e)+"</div></div>";p++;}
+      for(var j=tributes.length-1;j>=0;j--){var u=tributes[j];
+        html+="<div class='mem-item'><div class='mh'><span class='ma'>✝ "+mesc(u.a||(ko?"익명":"anon"))+"</span><span class='mt'>"+mesc(u.t)+"</span></div><div class='mb'>"+mesc(u.m)+"</div></div>";}
+      var total=rev+tributes.length;
+      html+="<div class='mem-count'>"+(ko?(total+"개의 추모 글 · 그를 기억합니다"):(total+" tributes · remembering him"))+"</div>";
+      L.innerHTML=html;}
+    window.__memRender=renderTributes;
+    renderTributes();
+    (function streamNext(){if(shown>=CURATED.length)return;
+      setTimeout(function(){shown++;renderTributes();streamNext();},7000+Math.random()*8000);})();
     var memForm=document.getElementById("mem-form");
     if(memForm)memForm.addEventListener("submit",function(e){e.preventDefault();
       var msg=document.getElementById("mem-msg").value.trim();if(!msg)return;var author=document.getElementById("mem-author").value.trim()||"익명";
@@ -3024,7 +3070,7 @@
   };
   function applyCardLang(ko){document.querySelectorAll(".card[data-key]").forEach(function(d){var k=d.getAttribute("data-key"),ds=d.querySelector(".ds");if(ds)ds.textContent=(ko?DS_KO[k]:(DS_EN[k]||DS_KO[k]))||ds.textContent;});}
   var LANGON=localStorage.getItem("tos_lang")==="ko";
-  function applyLang(on){langWalk(document.body,on?LANGDICT:LANGREV);applyCardLang(on);var b=$("#langbtn");if(b){b.classList.toggle("on",on);b.textContent=on?"✓ 한글패치 ON":"✝ Korean Patch";b.title=on?"한글패치 끄기 (English)":"UI 한글패치 켜기";}localStorage.setItem("tos_lang",on?"ko":"en");}
+  function applyLang(on){langWalk(document.body,on?LANGDICT:LANGREV);applyCardLang(on);var b=$("#langbtn");if(b){b.classList.toggle("on",on);b.textContent=on?"✓ 한글패치 ON":"✝ Korean Patch";b.title=on?"한글패치 끄기 (English)":"UI 한글패치 켜기";}localStorage.setItem("tos_lang",on?"ko":"en");if(window.__memRender)window.__memRender();}
   $("#langbtn").addEventListener("click",function(){LANGON=!LANGON;applyLang(LANGON);});
   applyCardLang(LANGON);             /* set descriptions to the right language on load (default = English) */
   if(LANGON)applyLang(true);

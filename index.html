@@ -53,12 +53,15 @@
   .follow a:hover{border-color:#7df9ff;color:#7df9ff;transform:translateY(-1px);}
   .follow a.kofi{border-color:rgba(255,210,60,.4);color:#ffe27a;}
   .follow a.kofi:hover{border-color:#ffe27a;}
-  #bgm-btn{position:fixed;top:14px;right:14px;z-index:30;display:inline-flex;align-items:center;gap:6px;
-    border:1px solid rgba(140,170,255,.32);background:rgba(8,14,28,.62);color:#cfe0ff;font-size:12.5px;font-weight:600;
-    font-family:inherit;border-radius:999px;padding:8px 14px;cursor:pointer;
+  #bgm-btn{position:fixed;top:14px;right:14px;z-index:30;width:42px;height:42px;display:inline-flex;align-items:center;justify-content:center;
+    border:1px solid rgba(140,170,255,.32);background:rgba(8,14,28,.62);color:#7df9ff;border-radius:50%;padding:0;cursor:pointer;
     -webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px);transition:transform .15s,border-color .15s,color .15s,background .15s;}
-  #bgm-btn:hover{border-color:#7df9ff;color:#7df9ff;transform:translateY(-1px);}
-  #bgm-btn.on{color:#7df9ff;border-color:rgba(125,249,255,.5);background:rgba(125,249,255,.1);}
+  #bgm-btn:hover{border-color:#7df9ff;transform:translateY(-1px) scale(1.05);}
+  #bgm-btn svg{width:22px;height:22px;display:block;}
+  #bgm-btn .spk-slash{display:none;}
+  #bgm-btn.off{color:#7b8499;border-color:rgba(140,170,255,.22);background:rgba(8,14,28,.5);}
+  #bgm-btn.off .spk-wave{display:none;}
+  #bgm-btn.off .spk-slash{display:block;}
 </style>
 </head>
 <body>
@@ -92,7 +95,19 @@
     <div class="quote">"An idiot admires complexity, a genius admires simplicity." &mdash; Terry A. Davis</div>
     <div class="nojs">SOAVIZ Labs Experiment #001 &middot; a respectful tribute, not an official continuation</div>
   </main>
-  <button id="bgm-btn" class="off" title="찬송 음악 켜기/끄기 · worship music" aria-label="음악 켜기/끄기">&#9835; 음악 켜기</button>
+  <button id="bgm-btn" class="off" title="찬송 음악 켜기 · worship music" aria-label="음악 켜기">
+    <svg viewBox="0 0 24 24" aria-hidden="true">
+      <polygon class="spk-body" points="3,9 7,9 12,4 12,20 7,15 3,15" fill="currentColor"/>
+      <g class="spk-wave" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round">
+        <path d="M15 8.6a4.2 4.2 0 0 1 0 6.8"/>
+        <path d="M17.6 6a7.6 7.6 0 0 1 0 12"/>
+      </g>
+      <g class="spk-slash">
+        <line x1="5" y1="19" x2="19" y2="5" stroke="#0a1020" stroke-width="4" stroke-linecap="round"/>
+        <line x1="5" y1="19" x2="19" y2="5" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/>
+      </g>
+    </svg>
+  </button>
   <script>
   /* gentle worship BGM — "Amazing Grace" (public domain hymn) as a warm church-organ pad
      with chords, bass and hall reverb. Auto-starts on first interaction; ♪ toggles. */
@@ -128,8 +143,8 @@
       mi++;timer=setTimeout(step,beats*BEAT*1000);}
     var btn=document.getElementById("bgm-btn");
     function setOn(v){on=v;
-      if(on){ensure();if(ctx.state==="suspended")ctx.resume();master.gain.cancelScheduledValues(ctx.currentTime);master.gain.setValueAtTime(Math.max(0.0001,master.gain.value),ctx.currentTime);master.gain.linearRampToValueAtTime(0.3*VOL,ctx.currentTime+2.4);if(!timer)step();if(btn)btn.classList.remove("off");}
-      else{if(master&&ctx)master.gain.linearRampToValueAtTime(0,ctx.currentTime+0.8);clearTimeout(timer);timer=null;if(btn)btn.classList.add("off");}}
+      if(on){ensure();if(ctx.state==="suspended")ctx.resume();master.gain.cancelScheduledValues(ctx.currentTime);master.gain.setValueAtTime(Math.max(0.0001,master.gain.value),ctx.currentTime);master.gain.linearRampToValueAtTime(0.3*VOL,ctx.currentTime+2.4);if(!timer)step();if(btn){btn.classList.remove("off");btn.setAttribute("aria-label","음악 끄기");btn.title="음악 끄기 · music off";}}
+      else{if(master&&ctx)master.gain.linearRampToValueAtTime(0,ctx.currentTime+0.8);clearTimeout(timer);timer=null;if(btn){btn.classList.add("off");btn.setAttribute("aria-label","음악 켜기");btn.title="음악 켜기 · music on";}}}
     function first(e){if(e&&e.target&&e.target.closest&&e.target.closest("#bgm-btn"))return;if(on)setOn(true);window.removeEventListener("pointerdown",first);window.removeEventListener("keydown",first);}
     window.addEventListener("pointerdown",first);window.addEventListener("keydown",first);
     if(btn)btn.addEventListener("click",function(e){e.stopPropagation();setOn(!on);});

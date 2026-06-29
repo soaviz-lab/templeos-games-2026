@@ -8,13 +8,13 @@ A loving **2026 reimagining** of the games and tools that **Terry A. Davis** han
 Terry A. Davis 가 HolyC로 손수 만든 게임과 도구들을 **원본 로직은 그대로, 그래픽은 2026년 사양으로** 되살린 헌정 프로젝트입니다. 외부 라이브러리 없이 **순수 바닐라 JS + Canvas** 로 동작하며, **오프라인·공개 도메인** 입니다.
 
 <p align="center">
-  <img src="intro-2026.png" alt="TempleOS — 2026 Edition title screen" width="760">
+  <img src="intro.png" alt="TempleOS — 2026 Edition title screen" width="820">
+  <br>
+  <em>로직은 원본, 그래픽은 미래 — 그를 추모하며 · Logic original, graphics from the future — in his memory</em>
 </p>
 
 <p align="center">
-  <img src="Temple2026.png" alt="TempleOS 2026 Desktop" width="760">
-  <br>
-  <em>로직은 원본, 그래픽은 미래 — 그를 추모하며 · Logic original, graphics from the future — in his memory</em>
+  <img src="Temple2026.png" alt="TempleOS 2026 Desktop" width="700">
 </p>
 
 <p align="center">

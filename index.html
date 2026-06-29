@@ -7,7 +7,7 @@
 <meta name="description" content="A public-domain 2026 reimagining of Terry A. Davis's HolyC games & tools — original logic, future graphics, offline. A respectful tribute by SOAVIZ Labs.">
 <meta property="og:title" content="TempleOS 2026 — Terry's games & tools, reborn">
 <meta property="og:description" content="로직은 원본, 그래픽은 미래 — 그를 추모하며. Public domain · offline · no telemetry.">
-<meta property="og:image" content="Temple2026.png">
+<meta property="og:image" content="intro.png">
 <meta property="og:type" content="website">
 <style>
   :root{--bg:#04060f;--cy:#55ffff;--gd:#ffd23c;--ink:#dfe7ff;}
@@ -25,9 +25,8 @@
   .scan{position:fixed;inset:0;z-index:2;pointer-events:none;opacity:.5;
     background:repeating-linear-gradient(0deg,rgba(0,0,0,.16) 0,rgba(0,0,0,.16) 1px,transparent 2px,transparent 3px);}
   .wrap{position:relative;z-index:3;max-width:640px;}
-  svg.titlecard{width:clamp(300px,86vw,580px);height:auto;display:block;margin:2px auto 16px;overflow:visible;
+  .titlecard{width:clamp(300px,86vw,580px);height:auto;display:block;margin:2px auto 16px;border-radius:16px;
     filter:drop-shadow(0 14px 32px rgba(0,40,70,.45));}
-  @media (prefers-reduced-motion:reduce){svg.titlecard *{animation:none!important;}}
   .visually-hidden{position:absolute!important;width:1px;height:1px;margin:-1px;padding:0;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap;border:0;}
   .cap{color:#aeb8d8;font-size:14px;line-height:1.6;margin:8px 0 4px;}
   .cap em{color:#ffe9b8;font-style:italic;}
@@ -66,118 +65,7 @@
   <div class="aurora" aria-hidden="true"></div>
   <div class="scan" aria-hidden="true"></div>
   <main class="wrap">
-    <svg class="titlecard" viewBox="0 0 720 540" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="TempleOS — 2026 Edition">
-      <defs>
-        <radialGradient id="sky" cx="50%" cy="40%" r="78%">
-          <stop offset="0%" stop-color="#6fe9fb"/>
-          <stop offset="58%" stop-color="#2ecdef"/>
-          <stop offset="100%" stop-color="#14b2d6"/>
-        </radialGradient>
-        <linearGradient id="tgold" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%" stop-color="#fff3b8"/><stop offset="40%" stop-color="#ffd23c"/>
-          <stop offset="78%" stop-color="#f0a513"/><stop offset="100%" stop-color="#bf7400"/>
-        </linearGradient>
-        <linearGradient id="tgold2" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%" stop-color="#ffe98a"/><stop offset="100%" stop-color="#d98e00"/>
-        </linearGradient>
-        <linearGradient id="steel" x1="0" y1="0" x2="1" y2="1">
-          <stop offset="0%" stop-color="#ffffff"/><stop offset="46%" stop-color="#cdd9e6"/>
-          <stop offset="100%" stop-color="#97abc0"/>
-        </linearGradient>
-        <radialGradient id="ruby" cx="40%" cy="34%" r="72%">
-          <stop offset="0%" stop-color="#ff9a9a"/><stop offset="45%" stop-color="#e83c4e"/>
-          <stop offset="100%" stop-color="#a30f28"/>
-        </radialGradient>
-        <linearGradient id="wgold" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%" stop-color="#fff7c4"/><stop offset="44%" stop-color="#ffd23c"/>
-          <stop offset="100%" stop-color="#ef9e0c"/>
-        </linearGradient>
-        <pattern id="scan2" width="3" height="3" patternUnits="userSpaceOnUse">
-          <rect width="3" height="1.3" y="0" fill="rgba(0,0,0,.09)"/>
-        </pattern>
-        <filter id="soft" x="-25%" y="-25%" width="150%" height="150%">
-          <feDropShadow dx="0" dy="3" stdDeviation="3" flood-color="rgba(0,42,62,.4)"/>
-        </filter>
-      </defs>
-
-      <!-- sky -->
-      <rect x="0" y="0" width="720" height="540" rx="22" fill="url(#sky)"/>
-
-      <!-- birds -->
-      <g stroke="#f3ffff" stroke-width="3" fill="none" stroke-linecap="round">
-        <animateTransform attributeName="transform" type="translate" values="0 0;12 -5;0 0" dur="10s" repeatCount="indefinite"/>
-        <path d="M150 150 q9 -10 18 -2 q9 -8 18 2"/>
-        <path d="M206 112 q7 -8 14 -2 q7 -6 14 2" opacity=".82"/>
-        <path d="M118 206 q8 -9 16 -2 q8 -7 16 2" opacity=".72"/>
-        <path d="M252 168 q6 -7 12 -1 q6 -6 12 1" opacity=".66"/>
-        <path d="M96 122 q6 -7 12 -1 q6 -6 12 1" opacity=".58"/>
-      </g>
-
-      <!-- temple pediment + balance beam -->
-      <g filter="url(#soft)">
-        <path d="M360 116 L486 192 L234 192 Z" fill="url(#tgold)" stroke="#6b3d00" stroke-width="4" stroke-linejoin="round"/>
-        <path d="M360 133 L462 188 L258 188 Z" fill="rgba(255,255,255,.18)"/>
-        <rect x="228" y="190" width="264" height="20" rx="4" fill="url(#tgold)" stroke="#6b3d00" stroke-width="4"/>
-        <rect x="233" y="193" width="254" height="5" rx="2" fill="rgba(255,255,255,.34)"/>
-        <rect x="228" y="208" width="26" height="12" rx="2" fill="url(#tgold2)" stroke="#6b3d00" stroke-width="3"/>
-        <rect x="466" y="208" width="26" height="12" rx="2" fill="url(#tgold2)" stroke="#6b3d00" stroke-width="3"/>
-      </g>
-
-      <!-- chains -->
-      <g stroke="#10333d" stroke-width="2.4" opacity=".9">
-        <line x1="241" y1="220" x2="282" y2="350"/><line x1="241" y1="220" x2="320" y2="350"/>
-        <line x1="479" y1="220" x2="400" y2="350"/><line x1="479" y1="220" x2="438" y2="350"/>
-      </g>
-
-      <!-- pans -->
-      <g stroke="#6b3d00" stroke-width="3" filter="url(#soft)">
-        <g transform="translate(301,352)"><path d="M-27 0 Q0 26 27 0 Z" fill="url(#tgold2)"/><ellipse cx="0" cy="0" rx="28" ry="6.5" fill="#ffe27a"/></g>
-        <g transform="translate(419,352)"><path d="M-27 0 Q0 26 27 0 Z" fill="url(#tgold2)"/><ellipse cx="0" cy="0" rx="28" ry="6.5" fill="#ffe27a"/></g>
-      </g>
-
-      <!-- SWORD -->
-      <g filter="url(#soft)">
-        <!-- blade -->
-        <polygon points="292,392 505,106 520,60 481,88 268,374" fill="url(#steel)" stroke="#5e7385" stroke-width="3" stroke-linejoin="round"/>
-        <polygon points="268,374 481,88 487,92 274,378" fill="rgba(60,84,108,.45)"/>
-        <polygon points="292,392 505,106 499,102 286,388" fill="rgba(255,255,255,.7)"/>
-        <!-- tip sparkle -->
-        <path d="M520 42 L524 56 L538 60 L524 64 L520 78 L516 64 L502 60 L516 56 Z" fill="#ffffff">
-          <animate attributeName="opacity" values="1;.45;1" dur="2.4s" repeatCount="indefinite"/>
-        </path>
-        <!-- grip -->
-        <rect x="212" y="425" width="58" height="22" rx="9" transform="rotate(-53.4 241 436)" fill="url(#tgold2)" stroke="#6b3d00" stroke-width="3.5"/>
-        <g stroke="#6b3d00" stroke-width="2" stroke-linecap="round">
-          <line x1="243" y1="421" x2="255" y2="431"/><line x1="234" y1="431" x2="248" y2="441"/><line x1="227" y1="441" x2="239" y2="451"/>
-        </g>
-        <circle cx="224" cy="458" r="13" fill="url(#tgold)" stroke="#6b3d00" stroke-width="3.5"/>
-        <circle cx="220" cy="454" r="3.5" fill="rgba(255,255,255,.6)"/>
-        <!-- cross-guard -->
-        <rect x="211" y="400" width="98" height="20" rx="9" transform="rotate(36.6 260 410)" fill="url(#tgold)" stroke="#6b3d00" stroke-width="3.5"/>
-        <circle cx="299" cy="439" r="9" fill="url(#tgold2)" stroke="#6b3d00" stroke-width="3"/>
-        <circle cx="221" cy="381" r="9" fill="url(#tgold2)" stroke="#6b3d00" stroke-width="3"/>
-        <!-- ruby -->
-        <circle cx="260" cy="410" r="9.5" fill="url(#ruby)" stroke="#6b1020" stroke-width="2.5"/>
-        <circle cx="256" cy="406" r="2.6" fill="rgba(255,255,255,.7)"/>
-      </g>
-
-      <!-- wordmark -->
-      <g font-family="'Arial Black','Archivo Black',Impact,'Malgun Gothic',sans-serif" font-weight="900" letter-spacing="1">
-        <text x="363" y="320" text-anchor="middle" font-size="90" fill="#7a4a08" opacity=".5">TempleOS</text>
-        <text x="360" y="316" text-anchor="middle" font-size="90" fill="url(#wgold)" stroke="#4a2c04" stroke-width="7" paint-order="stroke" style="paint-order:stroke fill">TempleOS</text>
-      </g>
-
-      <!-- subtitle plate -->
-      <g transform="translate(360,372)">
-        <rect x="-120" y="-3" width="240" height="32" rx="7" fill="#143b6b" stroke="#0c2547" stroke-width="2.5"/>
-        <line x1="-112" y1="13" x2="-92" y2="13" stroke="#dff1ff" stroke-width="3.5" stroke-linecap="round"/>
-        <line x1="92" y1="13" x2="112" y2="13" stroke="#dff1ff" stroke-width="3.5" stroke-linecap="round"/>
-        <text x="0" y="20" text-anchor="middle" font-family="'Courier New','Consolas',monospace" font-weight="700" font-size="21" letter-spacing="2" fill="#e6f4ff">2026 Edition</text>
-      </g>
-
-      <!-- crt scanlines over the card -->
-      <rect x="0" y="0" width="720" height="540" rx="22" fill="url(#scan2)" opacity=".5" pointer-events="none"/>
-    </svg>
+    <img class="titlecard" src="intro.png" alt="TempleOS — 2026 Edition">
     <h1 class="visually-hidden">TempleOS 2026 — 2026 Edition</h1>
     <div class="cap"><em>로직은 원본, 그래픽은 미래 &mdash; 그를 추모하며</em><br>Terry A. Davis의 HolyC 게임과 도구를 2026년의 감각으로 다시 빚다</div>
     <div class="dates">In memory of <b>Terry A. Davis</b> &middot; 1969&ndash;2018 &middot; creator of TempleOS</div>

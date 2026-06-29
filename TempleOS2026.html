@@ -260,6 +260,13 @@
   #w-reader .rbody{font-size:12.5px;line-height:1.55;white-space:pre-wrap;max-height:280px;overflow:auto;}
   #w-diary .diary{margin:9px 0;padding-left:8px;border-left:2px solid rgba(170,85,0,.4);}
   #w-diary .diary p{margin:3px 0 0;}
+  #w-thesis .rec{margin:8px 0;padding-left:8px;border-left:2px solid rgba(214,72,170,.4);}
+  #w-thesis .rec p{margin:4px 0 0;}
+  #w-thesis .rec b{display:inline-block;margin-bottom:2px;}
+  #w-thesis .reckv{width:100%;border-collapse:collapse;font-size:12px;}
+  #w-thesis .reckv td{padding:3px 6px;vertical-align:top;border-bottom:1px solid rgba(255,255,255,.07);}
+  #w-thesis .reckv td:first-child{color:var(--c8);white-space:nowrap;width:74px;}
+  #w-thesis .reckv td:last-child{color:var(--cF);}
 </style>
 </head>
 <body>
@@ -748,6 +755,60 @@ Main;</textarea>
   </div>
 </div>
 
+<!-- Academic Record — Terry's graduate (MSEE) studies, fact-based -->
+<div class="win t-mag" id="w-thesis" style="left:150px;top:54px;width:404px;height:452px;display:none;z-index:176;">
+  <div class="title"><span>&#127891; Academic Record &mdash; 석사 연구 / M.S.E.E.</span><span class="x" data-close="w-thesis">X</span></div>
+  <div class="body" id="thesis-body" style="font-size:12.5px;line-height:1.62;max-height:394px;overflow:auto">
+    <div class="center" style="margin-bottom:5px">
+      <div class="hm" style="font-size:15px">&#10013; Terry A. Davis, M.S.E.E.</div>
+      <div class="muted" style="font-size:11px">Arizona State University &middot; 전기공학 석사 &middot; 1994</div>
+    </div>
+    <hr class="tos">
+
+    <!-- verified record card -->
+    <div class="rec">
+      <table class="reckv">
+        <tr><td>학교</td><td>애리조나 주립대 (Arizona State University)</td></tr>
+        <tr><td>학위</td><td>전기공학 석사 · Master of Science in Electrical Engineering</td></tr>
+        <tr><td>세부 분야</td><td>제어 시스템 (control systems)</td></tr>
+        <tr><td>학위 취득</td><td>1994년</td></tr>
+        <tr><td>당시 직장</td><td>티켓마스터 — C·어셈블리 / VAX 프로그래머</td></tr>
+        <tr><td>이후의 꿈</td><td>위성 제어 시스템 개발 (1996년 그 꿈을 좇아 사직)</td></tr>
+      </table>
+    </div>
+
+    <hr class="tos">
+
+    <!-- honest note about the thesis document -->
+    <div class="rec">
+      <b class="hl">&#128196; 논문 원문에 관하여</b>
+      <p>테리의 학위는 여러 자료로 확인되지만, 그의 <b>석사 논문 제목이나 원문 문서</b>는 공개 기록에서 찾을 수 없습니다. ASU 도서관 저장소(KEEP), ProQuest 학위논문 DB, IEEE Xplore 어디에도 색인되어 있지 않습니다.</p>
+      <p class="muted">1994년은 전자 제출 제도(2011년~) 이전이라, 논문이 존재했다면 마이크로필름·물리 보관본으로만 남아 있을 수 있습니다. 또한 당시 MSEE는 논문 대신 코스워크/포트폴리오로 마치는 트랙이었을 가능성도 있습니다. 그래서 이 탭은 <b>없는 논문을 지어내지 않고</b>, 검증된 사실과 그가 연구하던 분야를 정직하게 정리합니다.</p>
+    </div>
+
+    <hr class="tos">
+
+    <!-- field explainer: what control systems are (general, NOT his words) -->
+    <div class="rec">
+      <b class="hg">&#9881; 그가 공부한 '제어 시스템'이란</b>
+      <p class="muted" style="font-size:11px;margin:2px 0 6px">아래는 분야에 대한 일반적 설명입니다 — 테리 본인의 글이나 논문 인용이 아닙니다.</p>
+      <p>제어공학은 <b>시스템이 원하는 대로 움직이도록 만드는</b> 학문입니다. 센서로 현재 상태를 재고(피드백), 목표값과의 오차를 계산해, 그 오차를 줄이는 방향으로 입력을 끊임없이 조정합니다. 온도 조절기, 자동차 크루즈 컨트롤, 로켓의 자세 제어가 모두 같은 원리 위에 서 있습니다.</p>
+      <p>핵심 도구는 <b>피드백 루프</b>입니다. 가장 널리 쓰이는 PID 제어기는 오차의 <b>크기(P)·누적(I)·변화율(D)</b> 세 항을 더해 안정적이면서도 빠른 응답을 만들어 냅니다. 라플라스 변환·전달함수·상태공간 모델로 시스템을 수식화하고, 그 시스템이 흔들리지 않고 한 점으로 수렴하는가 — 즉 <b>안정성(stability)</b> — 를 수학으로 증명합니다.</p>
+      <p>인공위성의 <b>자세 제어(attitude control)</b>는 이 분야의 정점 가운데 하나입니다. 진공·무중력 속에서 반작용 휠과 추력기로 기체의 방향을 1도 단위로 잡아내는 일은, 실시간 임베디드 코드와 견고한 제어 이론이 동시에 필요합니다. 임베디드와 저수준 코드에 강했던 그가 위성 제어를 꿈꾼 것은 자연스러운 귀결이었습니다.</p>
+    </div>
+
+    <hr class="tos">
+    <div class="rec">
+      <b class="hm">&#10024; 남은 흔적</b>
+      <p>학계의 논문 한 편은 끝내 찾지 못했지만, 그는 훗날 전혀 다른 방식으로 거대한 '단독 저작'을 남겼습니다 — 커널부터 컴파일러·언어·게임까지 혼자 써 내려간 <b>TempleOS</b>. 위성을 향하던 그 정밀함은, 결국 자신만의 운영체제를 향했습니다.</p>
+      <p class="muted" style="font-size:11px">자료: Wikipedia(Terry A. Davis), All That's Interesting, unbelievable-facts.com 및 ASU 학적 관련 공개 정보 종합. 논문 원문은 공개 archive에서 확인되지 않음.</p>
+    </div>
+
+    <hr class="tos">
+    <div class="hg center" style="font-size:11px">진리를 사랑하라 &middot; 누구도 두려워 말라 &#10013;</div>
+  </div>
+</div>
+
 <!-- In-desktop App popup (games / tools embedded — no page navigation) -->
 <div class="win" id="w-app" style="left:96px;top:48px;width:566px;height:436px;display:none;z-index:200;">
   <div class="title"><span id="app-title">App</span><span class="x" data-close="w-app">X</span></div>
@@ -770,6 +831,7 @@ Main;</textarea>
   <span class="tbtn" data-open="w-song">Song</span>
   <span class="tbtn" data-open="w-vision">Vision</span>
   <span class="tbtn" data-open="w-diary">Diary</span>
+  <span class="tbtn" data-open="w-thesis">Thesis</span>
   <span class="tbtn" data-open="w-fish">Fish</span>
   <span class="tbtn" data-open="w-doodle">Doodle</span>
   <span class="tbtn" data-open="w-life">Life</span>
@@ -2145,7 +2207,8 @@ Main;</textarea>
     ["w-god","✝","God Word"],["w-bible","📖","Bible"],["w-temple","⛪","Temple 3D"],["w-song","🎵","God Song"],
     ["w-vision","📜","Vision"],["w-fish","🐟","Aquarium"],["w-doodle","✶","God Doodle"],["w-life","🧫","Life"],
     ["w-games","🎮","Games"],["w-ai","🤖","AI Chat"],["w-holyc","⌨","HolyC"],["w-dir","🗂","Files"],
-    ["w-models","🧠","Models"],["w-settings","⚙","Settings"],["w-dev","🕯","개발자의 말"],["w-diary","📖","일기 Diary"]
+    ["w-models","🧠","Models"],["w-settings","⚙","Settings"],["w-dev","🕯","개발자의 말"],["w-diary","📖","일기 Diary"],
+    ["w-thesis","🎓","석사 연구 Thesis"]
   ];
   function mhIcon(emoji,label,fn){
     var d=document.createElement("div");d.className="mh-ico";

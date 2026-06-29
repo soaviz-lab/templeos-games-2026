@@ -55,13 +55,12 @@
   .follow a:hover{border-color:#7df9ff;color:#7df9ff;transform:translateY(-1px);}
   .follow a.kofi{border-color:rgba(255,210,60,.4);color:#ffe27a;}
   .follow a.kofi:hover{border-color:#ffe27a;}
-  #bgm-btn{position:fixed;top:14px;right:14px;z-index:30;width:44px;height:44px;border-radius:50%;
-    border:1px solid rgba(140,170,255,.32);background:rgba(8,14,28,.55);color:#7df9ff;font-size:18px;cursor:pointer;
-    -webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px);transition:transform .15s,border-color .15s,color .15s;}
-  #bgm-btn:hover{border-color:#7df9ff;transform:scale(1.07);}
-  #bgm-btn.off{color:#6b7596;border-color:rgba(140,170,255,.2);}
-  #bgm-btn .x{position:absolute;inset:0;display:none;align-items:center;justify-content:center;font-size:22px;}
-  #bgm-btn.off .x{display:flex;}
+  #bgm-btn{position:fixed;top:14px;right:14px;z-index:30;display:inline-flex;align-items:center;gap:6px;
+    border:1px solid rgba(140,170,255,.32);background:rgba(8,14,28,.62);color:#cfe0ff;font-size:12.5px;font-weight:600;
+    font-family:inherit;border-radius:999px;padding:8px 14px;cursor:pointer;
+    -webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px);transition:transform .15s,border-color .15s,color .15s,background .15s;}
+  #bgm-btn:hover{border-color:#7df9ff;color:#7df9ff;transform:translateY(-1px);}
+  #bgm-btn.on{color:#7df9ff;border-color:rgba(125,249,255,.5);background:rgba(125,249,255,.1);}
 </style>
 </head>
 <body>
@@ -138,13 +137,13 @@
     <div class="quote">"An idiot admires complexity, a genius admires simplicity." &mdash; Terry A. Davis</div>
     <div class="nojs">SOAVIZ Labs Experiment #001 &middot; a respectful tribute, not an official continuation</div>
   </main>
-  <button id="bgm-btn" title="음악 켜기/끄기 · music on/off" aria-label="music on/off">&#9835;<span class="x">&#9835;&#8260;</span></button>
+  <button id="bgm-btn" class="off" title="찬송 음악 켜기/끄기 · worship music" aria-label="음악 켜기/끄기">&#9835; 음악 켜기</button>
   <script>
   /* gentle worship BGM — "Amazing Grace" (public domain hymn) as a warm church-organ pad
      with chords, bass and hall reverb. Auto-starts on first interaction; ♪ toggles. */
   (function(){
     var AC=window.AudioContext||window.webkitAudioContext;if(!AC)return;
-    var ctx=null,master=null,mix=null,dry=null,wet=null,conv=null,comp=null,on=true,timer=null,mi=0,VOL=0.9;
+    var ctx=null,master=null,mix=null,dry=null,wet=null,conv=null,comp=null,on=false,timer=null,mi=0,VOL=0.9;
     var MEL=[[196.00,1],[261.63,2],[329.63,1],[261.63,2],[329.63,1],[293.66,3],
              [261.63,2],[220.00,1],[196.00,3],[196.00,1],[261.63,2],[329.63,1],
              [261.63,2],[329.63,1],[293.66,3],[392.00,3]];

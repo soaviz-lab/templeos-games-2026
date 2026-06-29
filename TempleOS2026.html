@@ -326,11 +326,11 @@
     <form id="merchform" style="margin-top:4px">
       <div style="display:flex;align-items:center;gap:4px;margin-bottom:3px">
         <label style="width:64px">NICKNAME</label>
-        <input class="tos" id="m-nick" value="Terry" style="flex:1">
+        <input class="tos" id="m-nick" value="soaviz" style="flex:1">
       </div>
       <div style="display:flex;align-items:center;gap:4px;margin-bottom:5px">
         <label style="width:64px"><span class="hl">*</span>EMAIL</label>
-        <input class="tos" id="m-email" value="tdavis@templeos.org" style="flex:1">
+        <input class="tos" id="m-email" value="soaviz.lab@gmail.com" style="flex:1">
       </div>
       <div class="center"><button class="tos" type="submit">SIGN UP!</button></div>
       <div class="muted center" style="margin-top:3px;font-size:11px"><span class="hl">*</span> required field &nbsp;&bull;&nbsp; Public Domain. No Spam.</div>
@@ -2012,19 +2012,26 @@ Main;</textarea>
           voices + sustained chords + bass + cathedral reverb (not 8-bit) ===== */
   (function(){
     var AC=window.AudioContext||window.webkitAudioContext;if(!AC)return;
-    var ctx=null,master=null,mix=null,dry=null,wet=null,conv=null,comp=null,on=true,timer=null,mi=0,VOL=1;
-    /* Amazing Grace (key C). [freq,beats] melody + per-step chord, so harmony sustains under it */
-    var MEL=[[196.00,1],[261.63,2],[329.63,1],[261.63,2],[329.63,1],[293.66,3],
-             [261.63,2],[220.00,1],[196.00,3],[196.00,1],[261.63,2],[329.63,1],
-             [261.63,2],[329.63,1],[293.66,3],[392.00,3]];
-    var CH  =["C","C","C","C","C","G","C","F","C","C","C","C","C","C","G","C"];
-    var CHORD={C:[130.81,164.81,196.00],G:[98.00,146.83,196.00],F:[87.31,130.81,174.61]};
-    var BASS ={C:65.41,G:49.00,F:43.65};
-    var BEAT=0.66; /* slow, worshipful */
-    /* group consecutive same-chord steps so the chord swells once and holds */
-    var segStart=[],segBeats=[];
-    (function(){var i=0;while(i<MEL.length){var nm=CH[i],j=i,b=0;while(j<MEL.length&&CH[j]===nm){b+=MEL[j][1];j++;}
-      segStart[i]=true;segBeats[i]=b;for(var k=i+1;k<j;k++){segStart[k]=false;segBeats[k]=0;}i=j;}})();
+    var ctx=null,master=null,mix=null,dry=null,wet=null,conv=null,comp=null,on=true,timer=null,mi=0,VOL=1,si=0;
+    /* three worship pieces rotate each loop so it never gets repetitive — [freq,beats] melody + per-step chord */
+    var CHORD={C:[130.81,164.81,196.00],G:[98.00,146.83,196.00],F:[87.31,130.81,174.61],
+               Am:[110.00,164.81,220.00],Dm:[146.83,174.61,220.00],Em:[164.81,196.00,246.94]};
+    var BASS ={C:65.41,G:49.00,F:43.65,Am:55.00,Dm:73.42,Em:82.41};
+    var SONGS=[
+      { beat:0.66, /* "Amazing Grace" (public domain) */
+        mel:[[196.00,1],[261.63,2],[329.63,1],[261.63,2],[329.63,1],[293.66,3],[261.63,2],[220.00,1],[196.00,3],[196.00,1],[261.63,2],[329.63,1],[261.63,2],[329.63,1],[293.66,3],[392.00,3]],
+        ch :["C","C","C","C","C","G","C","F","C","C","C","C","C","C","G","C"] },
+      { beat:0.62, /* "Hymn of Light" (original) */
+        mel:[[329.63,2],[392.00,1],[440.00,2],[392.00,1],[349.23,2],[329.63,1],[293.66,2],[392.00,1],[523.25,2],[493.88,1],[440.00,2],[392.00,1],[349.23,2],[329.63,1],[293.66,1],[261.63,3]],
+        ch :["C","C","Am","Am","F","F","G","G","C","C","F","F","Dm","G","G","C"] },
+      { beat:0.70, /* "Evening Praise" (original) */
+        mel:[[440.00,2],[523.25,1],[440.00,2],[349.23,1],[392.00,2],[329.63,1],[293.66,2],[246.94,1],[261.63,2],[329.63,1],[293.66,2],[349.23,1],[329.63,2],[293.66,1],[261.63,1],[220.00,3]],
+        ch :["Am","Am","F","F","C","C","G","G","Am","Am","Dm","Dm","Em","Em","Am","Am"] }
+    ];
+    SONGS.forEach(function(s){var mel=s.mel,ch=s.ch,ss=[],sb=[],i=0;   /* chord-hold segments per song */
+      while(i<mel.length){var nm=ch[i],j=i,b=0;while(j<mel.length&&ch[j]===nm){b+=mel[j][1];j++;}ss[i]=true;sb[i]=b;for(var k=i+1;k<j;k++){ss[k]=false;sb[k]=0;}i=j;}
+      s.segStart=ss;s.segBeats=sb;});
+    var cur=SONGS[0];
 
     function makeIR(sec,decay){var n=Math.floor(ctx.sampleRate*sec),buf=ctx.createBuffer(2,n,ctx.sampleRate);
       for(var ch=0;ch<2;ch++){var d=buf.getChannelData(ch);for(var k=0;k<n;k++)d[k]=(Math.random()*2-1)*Math.pow(1-k/n,decay);}return buf;}
@@ -2053,11 +2060,12 @@ Main;</textarea>
         var pg=ctx.createGain();pg.gain.value=p[1];o.connect(pg);pg.connect(vg);o.start(t0);o.stop(t0+dur+rel+0.1);});
     }
     function step(){if(!on||!ctx){timer=null;return;}
-      var idx=mi%MEL.length,m=MEL[idx],t0=ctx.currentTime+0.06,beats=m[1];
+      if(mi>=cur.mel.length){si=(si+1)%SONGS.length;cur=SONGS[si];mi=0;}  /* rotate to the next hymn each loop */
+      var idx=mi,m=cur.mel[idx],t0=ctx.currentTime+0.06,beats=m[1],BEAT=cur.beat;
       voice(m[0],beats*BEAT,0.15,t0);                                    /* melody */
-      if(segStart[idx]){var hold=segBeats[idx]*BEAT;
-        (CHORD[CH[idx]]||[]).forEach(function(f){voice(f,hold,0.072,t0);}); /* chord pad */
-        voice(BASS[CH[idx]]||65.41,hold,0.13,t0);}                        /* organ bass */
+      if(cur.segStart[idx]){var hold=cur.segBeats[idx]*BEAT;
+        (CHORD[cur.ch[idx]]||[]).forEach(function(f){voice(f,hold,0.072,t0);}); /* chord pad */
+        voice(BASS[cur.ch[idx]]||65.41,hold,0.13,t0);}                        /* organ bass */
       mi++;timer=setTimeout(step,beats*BEAT*1000);}
     function setOn(v){on=v;var b=document.getElementById("hymn-btn");
       if(on){ensure();if(ctx.state==="suspended")ctx.resume();master.gain.cancelScheduledValues(ctx.currentTime);

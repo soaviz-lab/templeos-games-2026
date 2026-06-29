@@ -55,6 +55,13 @@
   .follow a:hover{border-color:#7df9ff;color:#7df9ff;transform:translateY(-1px);}
   .follow a.kofi{border-color:rgba(255,210,60,.4);color:#ffe27a;}
   .follow a.kofi:hover{border-color:#ffe27a;}
+  #bgm-btn{position:fixed;top:14px;right:14px;z-index:30;width:44px;height:44px;border-radius:50%;
+    border:1px solid rgba(140,170,255,.32);background:rgba(8,14,28,.55);color:#7df9ff;font-size:18px;cursor:pointer;
+    -webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px);transition:transform .15s,border-color .15s,color .15s;}
+  #bgm-btn:hover{border-color:#7df9ff;transform:scale(1.07);}
+  #bgm-btn.off{color:#6b7596;border-color:rgba(140,170,255,.2);}
+  #bgm-btn .x{position:absolute;inset:0;display:none;align-items:center;justify-content:center;font-size:22px;}
+  #bgm-btn.off .x{display:flex;}
 </style>
 </head>
 <body>
@@ -131,5 +138,48 @@
     <div class="quote">"An idiot admires complexity, a genius admires simplicity." &mdash; Terry A. Davis</div>
     <div class="nojs">SOAVIZ Labs Experiment #001 &middot; a respectful tribute, not an official continuation</div>
   </main>
+  <button id="bgm-btn" title="음악 켜기/끄기 · music on/off" aria-label="music on/off">&#9835;<span class="x">&#9835;&#8260;</span></button>
+  <script>
+  /* gentle worship BGM — "Amazing Grace" (public domain hymn) as a warm church-organ pad
+     with chords, bass and hall reverb. Auto-starts on first interaction; ♪ toggles. */
+  (function(){
+    var AC=window.AudioContext||window.webkitAudioContext;if(!AC)return;
+    var ctx=null,master=null,mix=null,dry=null,wet=null,conv=null,comp=null,on=true,timer=null,mi=0,VOL=0.9;
+    var MEL=[[196.00,1],[261.63,2],[329.63,1],[261.63,2],[329.63,1],[293.66,3],
+             [261.63,2],[220.00,1],[196.00,3],[196.00,1],[261.63,2],[329.63,1],
+             [261.63,2],[329.63,1],[293.66,3],[392.00,3]];
+    var CH=["C","C","C","C","C","G","C","F","C","C","C","C","C","C","G","C"];
+    var CHORD={C:[130.81,164.81,196.00],G:[98.00,146.83,196.00],F:[87.31,130.81,174.61]};
+    var BASS={C:65.41,G:49.00,F:43.65},BEAT=0.66;
+    var segStart=[],segBeats=[];
+    (function(){var i=0;while(i<MEL.length){var nm=CH[i],j=i,b=0;while(j<MEL.length&&CH[j]===nm){b+=MEL[j][1];j++;}segStart[i]=true;segBeats[i]=b;for(var k=i+1;k<j;k++){segStart[k]=false;segBeats[k]=0;}i=j;}})();
+    function makeIR(sec,dec){var n=Math.floor(ctx.sampleRate*sec),buf=ctx.createBuffer(2,n,ctx.sampleRate);for(var ch=0;ch<2;ch++){var d=buf.getChannelData(ch);for(var k=0;k<n;k++)d[k]=(Math.random()*2-1)*Math.pow(1-k/n,dec);}return buf;}
+    function ensure(){if(ctx)return;ctx=new AC();
+      master=ctx.createGain();master.gain.value=0;comp=ctx.createDynamicsCompressor();master.connect(comp);comp.connect(ctx.destination);
+      mix=ctx.createGain();mix.gain.value=1;mix.connect(master);
+      dry=ctx.createGain();dry.gain.value=0.82;dry.connect(mix);
+      conv=ctx.createConvolver();conv.buffer=makeIR(3.6,2.6);wet=ctx.createGain();wet.gain.value=0.62;conv.connect(wet);wet.connect(mix);
+      var lfo=ctx.createOscillator(),la=ctx.createGain();lfo.frequency.value=0.18;la.gain.value=0.06;lfo.connect(la);la.connect(mix.gain);lfo.start();}
+    var PARTIALS=[[1,1],[2,0.5],[3,0.26],[4,0.14],[6,0.07]];
+    function voice(freq,dur,peak,t0){var vg=ctx.createGain();vg.gain.value=0.0001;
+      var lp=ctx.createBiquadFilter();lp.type="lowpass";lp.frequency.value=Math.min(5200,freq*7+700);lp.Q.value=0.2;
+      vg.connect(lp);lp.connect(dry);lp.connect(conv);
+      var atk=Math.min(0.32,dur*0.35),rel=Math.min(1.5,dur*0.7+0.45);
+      vg.gain.setValueAtTime(0.0001,t0);vg.gain.linearRampToValueAtTime(peak,t0+atk);vg.gain.setValueAtTime(peak*0.9,t0+dur*0.72);vg.gain.exponentialRampToValueAtTime(0.0006,t0+dur+rel);
+      PARTIALS.forEach(function(p){var o=ctx.createOscillator();o.type="sine";o.frequency.value=freq*p[0];o.detune.value=Math.random()*5-2.5;var pg=ctx.createGain();pg.gain.value=p[1];o.connect(pg);pg.connect(vg);o.start(t0);o.stop(t0+dur+rel+0.1);});}
+    function step(){if(!on||!ctx){timer=null;return;}
+      var idx=mi%MEL.length,m=MEL[idx],t0=ctx.currentTime+0.06,beats=m[1];
+      voice(m[0],beats*BEAT,0.15,t0);
+      if(segStart[idx]){var hold=segBeats[idx]*BEAT;(CHORD[CH[idx]]||[]).forEach(function(f){voice(f,hold,0.072,t0);});voice(BASS[CH[idx]]||65.41,hold,0.13,t0);}
+      mi++;timer=setTimeout(step,beats*BEAT*1000);}
+    var btn=document.getElementById("bgm-btn");
+    function setOn(v){on=v;
+      if(on){ensure();if(ctx.state==="suspended")ctx.resume();master.gain.cancelScheduledValues(ctx.currentTime);master.gain.setValueAtTime(Math.max(0.0001,master.gain.value),ctx.currentTime);master.gain.linearRampToValueAtTime(0.3*VOL,ctx.currentTime+2.4);if(!timer)step();if(btn)btn.classList.remove("off");}
+      else{if(master&&ctx)master.gain.linearRampToValueAtTime(0,ctx.currentTime+0.8);clearTimeout(timer);timer=null;if(btn)btn.classList.add("off");}}
+    function first(e){if(e&&e.target&&e.target.closest&&e.target.closest("#bgm-btn"))return;if(on)setOn(true);window.removeEventListener("pointerdown",first);window.removeEventListener("keydown",first);}
+    window.addEventListener("pointerdown",first);window.addEventListener("keydown",first);
+    if(btn)btn.addEventListener("click",function(e){e.stopPropagation();setOn(!on);});
+  })();
+  </script>
 </body>
 </html>

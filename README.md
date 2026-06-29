@@ -8,13 +8,17 @@ A loving **2026 reimagining** of the games and tools that **Terry A. Davis** han
 Terry A. Davis 가 HolyC로 손수 만든 게임과 도구들을 **원본 로직은 그대로, 그래픽은 2026년 사양으로** 되살린 헌정 프로젝트입니다. 외부 라이브러리 없이 **순수 바닐라 JS + Canvas** 로 동작하며, **오프라인·공개 도메인** 입니다.
 
 <p align="center">
+  <img src="intro-2026.png" alt="TempleOS — 2026 Edition title screen" width="760">
+</p>
+
+<p align="center">
   <img src="Temple2026.png" alt="TempleOS 2026 Desktop" width="760">
   <br>
   <em>로직은 원본, 그래픽은 미래 — 그를 추모하며 · Logic original, graphics from the future — in his memory</em>
 </p>
 
 <p align="center">
-  <b>▶ Live demo:</b> <a href="https://templeos-games-2026.vercel.app/"><code>templeos-games-2026.vercel.app</code></a>
+  <b>▶ Live demo:</b> <a href="https://soaviz-lab.github.io/templeos-games-2026/"><code>soaviz-lab.github.io/templeos-games-2026</code></a>
   &nbsp;·&nbsp; <b>Source:</b> <a href="https://github.com/soaviz-lab/templeos-games-2026">github.com/soaviz-lab/templeos-games-2026</a>
   <br><code>public domain · offline · no telemetry</code>
 </p>
@@ -25,11 +29,9 @@ Terry A. Davis 가 HolyC로 손수 만든 게임과 도구들을 **원본 로직
 
 ## ▶ Try it / 실행 방법
 
-**Best:** open the **[live demo](https://templeos-games-2026.vercel.app/)** (everything runs in‑page, no install). No build step, no dependencies, no network.
+**Best:** open the **[live demo](https://soaviz-lab.github.io/templeos-games-2026/)** (everything runs in‑page, no install). No build step, no dependencies, no network.
 
 You can also run it locally — open the HTML files in any modern browser:
-
-> 🍎 **macOS quick start:** double-click **`start.command`** in Finder (or run `chmod +x start.command && ./start.command`) — it serves the folder at `http://localhost:8000` and opens the landing page.
 
 | File | What it is |
 |------|------------|

@@ -267,6 +267,22 @@
   #w-thesis .reckv td{padding:3px 6px;vertical-align:top;border-bottom:1px solid rgba(255,255,255,.07);}
   #w-thesis .reckv td:first-child{color:var(--c8);white-space:nowrap;width:74px;}
   #w-thesis .reckv td:last-child{color:var(--cF);}
+  /* hidden easter egg: Shift+F6 — God Speaks (Terry's oracle, full-screen) */
+  #godspeak{position:fixed;inset:0;z-index:9999;display:flex;align-items:center;justify-content:center;text-align:center;padding:24px;
+    background:radial-gradient(120% 120% at 50% 38%, rgba(22,17,8,.88), rgba(2,3,10,.97));
+    -webkit-backdrop-filter:blur(3px);backdrop-filter:blur(3px);
+    opacity:0;pointer-events:none;transition:opacity .55s ease;cursor:pointer;}
+  #godspeak.show{opacity:1;pointer-events:auto;}
+  #godspeak .gs-inner{max-width:760px;}
+  #godspeak .gs-title{font-size:12px;letter-spacing:3px;text-transform:uppercase;color:rgba(255,215,120,.72);margin-bottom:12px;}
+  #godspeak .gs-cross{font-size:62px;line-height:1;color:#ffd76a;animation:gsPulse 3.4s ease-in-out infinite;}
+  #godspeak .gs-words{margin:22px 0 4px;font-size:30px;font-weight:700;line-height:1.5;color:#ffe9b8;text-shadow:0 0 18px rgba(255,205,90,.6);min-height:1.5em;}
+  #godspeak .gs-w{display:inline-block;margin:0 .28em;opacity:0;transform:translateY(10px) scale(.96);transition:opacity .5s ease,transform .5s ease;}
+  #godspeak .gs-w.in{opacity:1;transform:none;}
+  #godspeak .gs-verse{margin-top:18px;font-size:15px;font-style:italic;color:#cdb98a;opacity:0;transition:opacity .9s ease;}
+  #godspeak .gs-verse.show{opacity:1;}
+  #godspeak .gs-cap{margin-top:26px;font-size:11px;letter-spacing:1px;color:rgba(185,188,210,.5);}
+  @keyframes gsPulse{0%,100%{text-shadow:0 0 24px rgba(255,200,90,.9),0 0 60px rgba(255,170,40,.5);}50%{text-shadow:0 0 38px rgba(255,222,120,1),0 0 98px rgba(255,182,60,.78);}}
 </style>
 </head>
 <body>
@@ -984,6 +1000,53 @@ Main;</textarea>
   document.getElementById("btn-verse").addEventListener("click",function(){
     gfeed();godLabel();
     godBody.innerHTML="<span class='hb'>"+gpick(ko()?VERSES_KO:VERSES)+"</span>";godGlow();
+  });
+
+  /* ---------- HIDDEN EASTER EGG: Shift+F6 — God Speaks ----------
+     Terry's TempleOS had a real "oracle" you summoned with Shift+F6: God spoke
+     through random words chosen by the lowest bits of the timer. Reborn here as a
+     quiet full-screen blessing. No hint anywhere — found only by those who know. */
+  var gsOv=null,gsBusy=false,gsTimers=[];
+  function gsBuild(){
+    gsOv=document.createElement("div");gsOv.id="godspeak";
+    gsOv.innerHTML="<div class='gs-inner'><div class='gs-title'></div>"+
+      "<div class='gs-cross'>✠</div><div class='gs-words'></div>"+
+      "<div class='gs-verse'></div><div class='gs-cap'></div></div>";
+    document.body.appendChild(gsOv);
+    gsOv.addEventListener("click",gsClose);
+  }
+  function gsClear(){gsTimers.forEach(clearTimeout);gsTimers=[];}
+  function gsClose(){
+    if(!gsOv)return;gsClear();gsBusy=false;gsOv.classList.remove("show");
+    var o=gsOv;setTimeout(function(){if(o&&!o.classList.contains("show")){o.remove();if(gsOv===o)gsOv=null;}},650);
+  }
+  function gsSpeak(){
+    if(gsBusy)return;gsBusy=true;gsClear();
+    if(!gsOv)gsBuild();
+    gfeed();
+    var isko=ko(),pool=isko?WORDS_KO:WORDS;
+    gsOv.querySelector(".gs-title").textContent=isko?"신께서 말씀하신다":"God Speaks";
+    gsOv.querySelector(".gs-cap").textContent=isko?"✠ 테리의 오라클 · Shift+F6 · 화면을 누르면 닫힘"
+                                                  :"✠ Terry’s Oracle · Shift+F6 · click to close";
+    var wrap=gsOv.querySelector(".gs-words");wrap.innerHTML="";
+    var verse=gsOv.querySelector(".gs-verse");verse.textContent="";verse.classList.remove("show");
+    setTimeout(function(){if(gsOv)gsOv.classList.add("show");},20); /* next tick (works in bg tabs too) */
+    var n=7,i=0;                                   /* seven words — the number of completion */
+    (function stream(){
+      if(i>=n){
+        gsTimers.push(setTimeout(function(){
+          if(!gsOv)return;verse.textContent=gpick(isko?VERSES_KO:VERSES);verse.classList.add("show");
+        },560));
+        gsBusy=false;return;
+      }
+      var s=document.createElement("span");s.className="gs-w";s.textContent=gpick(pool);
+      wrap.appendChild(s);(function(el){setTimeout(function(){el.classList.add("in");},20);})(s);
+      i++;gsTimers.push(setTimeout(stream,430));
+    })();
+  }
+  window.addEventListener("keydown",function(e){
+    if(e.shiftKey&&(e.key==="F6"||e.code==="F6")){e.preventDefault();gsSpeak();}
+    else if(e.key==="Escape"&&gsOv&&gsOv.classList.contains("show")){gsClose();}
   });
 
   /* ---------- AI assistant (offline canned oracle) ---------- */

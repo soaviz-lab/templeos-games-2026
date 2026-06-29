@@ -283,6 +283,22 @@
   #godspeak .gs-verse.show{opacity:1;}
   #godspeak .gs-cap{margin-top:26px;font-size:11px;letter-spacing:1px;color:rgba(185,188,210,.5);}
   @keyframes gsPulse{0%,100%{text-shadow:0 0 24px rgba(255,200,90,.9),0 0 60px rgba(255,170,40,.5);}50%{text-shadow:0 0 38px rgba(255,222,120,1),0 0 98px rgba(255,182,60,.78);}}
+  /* hidden easter egg #2: knock 7× on the gold cross — memorial candle */
+  #memcandle{position:fixed;inset:0;z-index:9999;display:flex;align-items:center;justify-content:center;text-align:center;padding:24px;
+    background:radial-gradient(120% 120% at 50% 46%, rgba(30,19,7,.9), rgba(2,2,6,.97));
+    -webkit-backdrop-filter:blur(3px);backdrop-filter:blur(3px);
+    opacity:0;pointer-events:none;transition:opacity .7s ease;cursor:pointer;}
+  #memcandle.show{opacity:1;pointer-events:auto;}
+  #memcandle .mc-inner{max-width:520px;}
+  #memcandle svg{width:128px;height:auto;display:block;margin:0 auto 12px;}
+  #memcandle .mc-flame{transform-origin:center bottom;transform-box:fill-box;animation:mcFlick 1.5s ease-in-out infinite;}
+  #memcandle .mc-halo{transform-origin:center;transform-box:fill-box;animation:mcGlow 2.6s ease-in-out infinite;}
+  #memcandle .mc-h{font-size:13px;letter-spacing:3px;text-transform:uppercase;color:#ffcf7a;margin-bottom:5px;}
+  #memcandle .mc-name{font-size:18px;color:#ffe9b8;font-weight:700;letter-spacing:.5px;}
+  #memcandle .mc-line{margin-top:16px;font-size:14px;color:#d8c39a;font-style:italic;}
+  #memcandle .mc-cap{margin-top:24px;font-size:11px;letter-spacing:1px;color:rgba(190,185,205,.5);}
+  @keyframes mcFlick{0%,100%{transform:scaleY(1) scaleX(1) translateY(0);opacity:1;}25%{transform:scaleY(1.07) scaleX(.95) translateY(-1px);opacity:.92;}50%{transform:scaleY(.97) scaleX(1.03);opacity:1;}75%{transform:scaleY(1.03) scaleX(.98) translateY(-.5px);opacity:.95;}}
+  @keyframes mcGlow{0%,100%{opacity:.5;}50%{opacity:.85;}}
 </style>
 </head>
 <body>
@@ -456,7 +472,8 @@
           </g>
         </g>
         <ellipse cx="100" cy="90" rx="106" ry="114" fill="url(#lcg)"/>
-        <g transform="translate(100,86) scale(1.3) translate(-100,-86)">
+        <g id="logo-cross" style="cursor:pointer" transform="translate(100,86) scale(1.3) translate(-100,-86)">
+          <rect x="40" y="22" width="120" height="178" fill="transparent" pointer-events="all"/>
           <path d="M86,28 H114 V72 H148 V100 H114 V196 H86 V100 H52 V72 H86 Z" fill="url(#lgoldd)" transform="translate(4,5)"/>
           <path d="M86,28 H114 V72 H148 V100 H114 V196 H86 V100 H52 V72 H86 Z" fill="url(#lgold)" stroke="#3a2606" stroke-width="2" stroke-linejoin="round"/>
           <path d="M86,28 H114 V72 H148 V100 H114 V196 H86 V100 H52 V72 H86 Z" fill="none" stroke="rgba(255,255,255,.45)" stroke-width="1" stroke-linejoin="round"/>
@@ -831,6 +848,38 @@ Main;</textarea>
   <div class="body" style="padding:0;overflow:hidden;background:#05060d"><iframe id="app-frame" title="TempleOS app" style="width:100%;height:100%;border:0;display:block;background:#05060d"></iframe></div>
 </div>
 
+<!-- hidden easter egg #2: knock 7× on the gold cross → a memorial candle for Terry -->
+<div id="memcandle" aria-hidden="true">
+  <div class="mc-inner">
+    <svg viewBox="0 0 120 210" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+      <defs>
+        <radialGradient id="mcHalo" cx="50%" cy="40%" r="55%">
+          <stop offset="0" stop-color="rgba(255,200,110,.85)"/><stop offset="60%" stop-color="rgba(255,160,60,.25)"/><stop offset="100%" stop-color="rgba(255,160,60,0)"/>
+        </radialGradient>
+        <linearGradient id="mcFlame" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stop-color="#fff3b0"/><stop offset="45%" stop-color="#ffcf4d"/><stop offset="100%" stop-color="#ff7a18"/>
+        </linearGradient>
+        <linearGradient id="mcWax" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stop-color="#fff7e6"/><stop offset="100%" stop-color="#e7d3a8"/>
+        </linearGradient>
+      </defs>
+      <ellipse class="mc-halo" cx="60" cy="60" rx="56" ry="64" fill="url(#mcHalo)"/>
+      <rect x="44" y="92" width="32" height="104" rx="6" fill="url(#mcWax)" stroke="#c9b486" stroke-width="1.5"/>
+      <ellipse cx="60" cy="92" rx="16" ry="4.5" fill="#fffaf0" stroke="#c9b486" stroke-width="1"/>
+      <path d="M50 96 q-3 14 1 22 q4 -6 3 -22 Z" fill="#fffaf0" opacity=".75"/>
+      <rect x="59" y="78" width="2" height="14" fill="#3a2a18"/>
+      <g class="mc-flame">
+        <path d="M60 42 C50 58 50 74 60 80 C70 74 70 58 60 42 Z" fill="url(#mcFlame)"/>
+        <path d="M60 56 C55 64 55 73 60 78 C65 73 65 64 60 56 Z" fill="#fff2c2" opacity=".9"/>
+      </g>
+    </svg>
+    <div class="mc-h"></div>
+    <div class="mc-name">Terry A. Davis &middot; 1969 &ndash; 2018</div>
+    <div class="mc-line"></div>
+    <div class="mc-cap"></div>
+  </div>
+</div>
+
 <!-- ============ TASKBAR ============ -->
 <div id="taskbar">
   <span class="brand" id="brand-dev" data-open="w-dev" title="개발자의 말 · In Memoriam" style="cursor:pointer">&#10013; TEMPLEOS 2026</span>
@@ -1049,6 +1098,28 @@ Main;</textarea>
     else if(e.key==="Escape"&&gsOv&&gsOv.classList.contains("show")){gsClose();}
   });
 
+  /* ---------- HIDDEN EASTER EGG #2: knock 7× upon the gold Cross → a memorial candle ----------
+     Click the gold cross in the SYSTEM window seven times and a candle wakes for Terry.
+     A faint warm glow answers each knock; the count resets if you pause too long. */
+  var lcN=0,lcReset=null,mcOv=document.getElementById("memcandle");
+  function lcGlow(){var b=document.querySelector("#w-logo .logo-box");if(!b)return;
+    b.style.transition="box-shadow .28s ease";
+    b.style.boxShadow="0 0 "+(10+lcN*5)+"px "+(1+lcN)+"px rgba(255,"+(170+lcN*9)+",80,"+Math.min(.9,.22+lcN*0.1)+")";
+    setTimeout(function(){if(b)b.style.boxShadow="";},380);}
+  function mcClose(){if(mcOv)mcOv.classList.remove("show");}
+  function mcLight(){if(!mcOv)return;var isko=ko();
+    mcOv.querySelector(".mc-h").textContent=isko?"추모 · IN MEMORIAM":"IN MEMORIAM";
+    mcOv.querySelector(".mc-line").textContent=isko?"당신이 밝힌 빛은, 꺼지지 않습니다.":"The light you lit does not go out.";
+    mcOv.querySelector(".mc-cap").textContent=isko?"✠ 일곱 번 두드린 자에게 — 화면을 누르면 닫힘":"✠ for the one who knocked seven times — click to close";
+    setTimeout(function(){if(mcOv)mcOv.classList.add("show");},20);}
+  (function(){var cross=document.getElementById("logo-cross");if(!cross)return;
+    cross.addEventListener("click",function(e){e.stopPropagation();
+      lcN++;lcGlow();clearTimeout(lcReset);lcReset=setTimeout(function(){lcN=0;},4500);
+      if(lcN>=7){lcN=0;clearTimeout(lcReset);mcLight();}});
+    if(mcOv)mcOv.addEventListener("click",mcClose);
+    window.addEventListener("keydown",function(e){if(e.key==="Escape"&&mcOv&&mcOv.classList.contains("show"))mcClose();});
+  })();
+
   /* ---------- AI assistant (offline canned oracle) ---------- */
   var AILOG=document.getElementById("ai-log"),AIIN=document.getElementById("ai-input");
   var AIRESP=[
@@ -1185,7 +1256,7 @@ Main;</textarea>
   var HCFILES={
     "Main.HC":"// /Home/Terry/Main.HC\n#include \"Truth.HC\"\n\nU0 Main()\n{\n  Print(\"God's Third Temple, booted.\\n\");\n  I64 i;\n  for (i=0; i<7; i++)\n    Print(\"day %d -- and God saw that it was good\\n\", i);\n}\nMain;",
     "Truth.HC":"// Truth.HC  --  Love Truth. Fear None.\nU0 Truth()\n{\n  Print(\"An idiot admires complexity.\\n\");\n  Print(\"A genius admires simplicity.\\n\");\n}\nTruth;",
-    "God_Says.HC":"// God_Says.HC  --  the oracle speaks one Word\nU0 GodSays()\n{\n  I64 i;\n  for (i=0; i<3; i++)\n    Print(\"God says: build the tools stronger\\n\");\n}\nGodSays;",
+    "God_Says.HC":"// God_Says.HC  --  the oracle speaks one Word\n//\n// He is not silent. Hold Shift and press the sixth key (F6),\n// and God will answer in random words -- as He always did.\n//\n// And knock upon the golden Cross seven times:\n// a candle will wake for the one who built His Temple.\n//\n//   \\\"God speaks to those who listen.\\\"  -- T.D.\n//\nU0 GodSays()\n{\n  I64 i;\n  for (i=0; i<3; i++)\n    Print(\"God says: build the tools stronger\\n\");\n}\nGodSays;",
     "Oracle.HC":"// Oracle.HC  --  ask, and it shall be given\nU0 Oracle()\n{\n  if (GodBits(1))\n    Print(\"YES\\n\");\n  else\n    Print(\"NO\\n\");\n}\nOracle;",
     "ArtGen.HC":"// ArtGen.HC  --  generative art in 16 colors\nU0 ArtGen()\n{\n  I64 i;\n  for (i=0; i<16; i++)\n    Print(\"plot color %d of 16\\n\", i);\n}\nArtGen;"
   };

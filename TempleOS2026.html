@@ -915,7 +915,7 @@ Main;</textarea>
 (function(){
   "use strict";
 
-  var LANG="en"; /* current UI language: "en" | "ko" */
+  var LANG=(function(){try{return localStorage.getItem("tos_lang")==="ko"?"ko":"en";}catch(e){return "en";}})(); /* current UI language: "en" | "ko" — restored from localStorage, shared with the arcade */
   function ko(){return LANG==="ko";}
 
   /* ---------- toast ---------- */
@@ -1523,6 +1523,7 @@ Main;</textarea>
   document.getElementById("langbtn").addEventListener("click",function(){
     var toKo=!ko();
     LANG=toKo?"ko":"en";
+    try{localStorage.setItem("tos_lang",LANG);}catch(e){}   /* persist + sync with the arcade */
     applyLang(toKo);
     /* refresh the god-word default + console default into the new language */
     godLabel();
@@ -2403,6 +2404,14 @@ Main;</textarea>
   else if(MOBILE_MQ.addListener)MOBILE_MQ.addListener(applyMode);
   window.addEventListener("resize",applyMode);
   window.addEventListener("orientationchange",applyMode);
+
+  /* restore 한글패치 on load if it was left on (persists across reloads; shared with the arcade)
+     — this is why the Shift+F6 / candle easter eggs now appear in Korean for patch users */
+  if(ko()){
+    applyLang(true);
+    godLabel();
+    godBody.innerHTML="작업을 가속하라. 한계 없이 만들라. 신이 아니라 도구로서 만들라. 로컬로 유지하라. 진리를 사랑하라. 누구도 두려워 말라.";
+  }
 
   syncTask();
 })();

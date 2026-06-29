@@ -2881,7 +2881,7 @@
     {key:"elephantwalk",ico:"🐘",nm:"ElephantWalk",o:"ElephantWalk · 3D",ds:"3D 원근 사원 러너. 차선을 바꿔 기둥을 피하고 보물을 모으는 엔드리스 런."},
     {key:"wenceslas",ico:"❄️",nm:"Wenceslas",o:"Wenceslas · 3D",ds:"3D 설야 썰매 활강. 나무를 피하고 등불을 모으세요. 캐럴 BGM 탑재."}
   ];
-  function buildCards(list,host,verb){list.forEach(function(c){var d=document.createElement("div");d.className="card";
+  function buildCards(list,host,verb){list.forEach(function(c){var d=document.createElement("div");d.className="card";d.setAttribute("data-key",c.key);
     d.innerHTML="<div class='ico'>"+c.ico+"</div><div class='nm'>"+c.nm+"<span class='o mono'>"+c.o+"</span></div>"+
       "<div class='ds'>"+c.ds+"</div><div class='play'>"+(verb||"▶ Play")+"</div>";
     d.onclick=function(){launch(c.key);};host.appendChild(d);});}
@@ -2957,9 +2957,63 @@
       if(node.id==="g-help"||node.id==="g-stat"||node.id==="mem-list"||node.id==="langbtn")return;
       for(var i=0;i<node.childNodes.length;i++)langWalk(node.childNodes[i],map);}
   }
+  /* bilingual game/tool descriptions — English shown when 한글패치 is OFF (default) */
+  var DS_KO={};CARDS.concat(TOOLS).forEach(function(c){DS_KO[c.key]=c.ds;});
+  var DS_EN={
+    flapbat:"Terry's classic — flap the bat to catch 32 bugs as fast as you can. Reborn with a neon night sky and particles.",
+    tictactoe:"Two-player tic-tac-toe. Glowing X/O, place-in animation, winning-line sweep.",
+    maze:"Draw the walls and watch DFS solve the maze with a crystalline glow.",
+    varoom:"Pseudo-3D racer. Dodge curves, dips and rivals to the finish line over a neon sunset.",
+    zoneout:"Arcade shooter. Blast enemies and survive the waves. Lasers and explosion particles.",
+    catacomb:"A real first-person 3D maze. Collect glowing crosses. Raycasting engine built from scratch.",
+    digits:"Color-number memory game. Memorize the resistor-color sequence and enter it — it keeps getting longer.",
+    bigguns:"Artillery game. Read angle, power, wind and gravity to hit the target. Terrain craters as you fire.",
+    collision:"Elastic-collision pool physics. Drag the cue ball to sink the colored balls.",
+    thedead:"Side-scrolling zombie-defense shooter. Hold back the oncoming dead. Waves, score, lives.",
+    circletrace:"Giotto's perfect circle. Draw a circle in one stroke and score your accuracy.",
+    raindrops:"Catch the falling rain in your jar and fill it up.",
+    zing:"Neon breakout. Bounce the ball off the paddle to break every rainbow brick.",
+    massspring:"Spring physics. Pull and release the mass to oscillate and smash the orbs.",
+    bombergolf:"Neon golf. Use gravity and terrain bounce to hole out in as few strokes as possible.",
+    treecheckers:"Checkers vs AI. Jump to capture, king on the back row, clear all enemy pieces.",
+    rocket:"Lunar lander. Conserve fuel and touch down slow and vertical on the pad. Thruster-flame particles.",
+    blackdiamond:"Downhill skiing. Dodge the trees and pass the gates. It keeps getting faster.",
+    squirt:"Water cannon. Aim with the mouse and spray to put out every fire.",
+    dungen:"Procedural dungeon crawl. Find treasure by torchlight and escape through the exit.",
+    whap:"Base defense. Whack the invaders pulled toward the central temple with a glowing ball.",
+    logic:"Deduction game. Crack the 4-color code in 10 tries using black/white peg hints.",
+    halogen:"Stay-on-the-winding-road racer. Steer to keep on the road — the farther you go, the higher you score.",
+    vocabulary:"Multiple-choice word quiz. Pick the right meaning and build a streak.",
+    talons:"Dogfight shooter. Fly up and down to shoot down enemy planes and avoid collisions.",
+    rawhide:"Quick-draw duel. Fire the instant you see DRAW! — out-react your opponent.",
+    flattops:"Naval battle (Battleship). Bombard the grid to sink the whole hidden fleet.",
+    keepaway:"Ball juggling. Tap the ball up with the paddle and keep it alive as long as you can.",
+    castle:"Castle-escape stealth. Dodge the monster, grab the keys, reach the exit!",
+    xcaliber:"Sword duel. Block high or low and counter to bring the enemy's health to zero.",
+    tothefront:"Turn-based artillery vs AI. Read angle, power and wind to land the first hit.",
+    span:"Bridge-bracing. Place pillars to stop the sag and let the truck cross.",
+    stadium:"Field-goal kicking. Read the wind and split the uprights to push the distance.",
+    battlelines:"Connect Four vs AI. Be first to line up four horizontally, vertically or diagonally.",
+    rocketscience:"Gravity slingshot. Use planetary gravity to steer the probe into the target orbit.",
+    titanium:"Top-down tank arena. Rotate, advance and fire to destroy enemy tanks and survive.",
+    strut:"3D isometric tower stacker. Stack the blocks precisely and reach for max height.",
+    elephantwalk:"3D perspective temple runner. Switch lanes to dodge pillars and grab treasure — endless run.",
+    wenceslas:"3D snowy-night sled run. Dodge the trees and collect lanterns. Carol BGM included.",
+    organ:"A playable pipe organ. Press the keys by keyboard or click for a real organ tone. Rebuild of Terry's ASCIIOrgan.",
+    kaleido:"Symmetry kaleidoscope drawing. Drag to paint rainbow patterns in N-fold symmetry. Terry's Symmetry demo.",
+    hanoi:"Tower of Hanoi puzzle. Move the discs to the right peg. Auto-solve animation included.",
+    psalmody:"Synth step-sequencer. Tap the grid to compose and play hymns. Rebuild of Terry's music tool.",
+    spriteed:"16x16 pixel sprite editor. A dot-art tool you paint with a palette.",
+    oracle:"Oracle — tap to receive a random verse or word. Rebuild of Terry's oracle.",
+    timeclock:"Neon analog clock and stopwatch. Tap to start and stop.",
+    grmodels:"3D wireframe viewer. Drag to rotate, tap to change models. Terry's 3D graphics.",
+    budget:"Budget book. Tap to adjust spending per category and see your balance vs budget."
+  };
+  function applyCardLang(ko){document.querySelectorAll(".card[data-key]").forEach(function(d){var k=d.getAttribute("data-key"),ds=d.querySelector(".ds");if(ds)ds.textContent=(ko?DS_KO[k]:(DS_EN[k]||DS_KO[k]))||ds.textContent;});}
   var LANGON=localStorage.getItem("tos_lang")==="ko";
-  function applyLang(on){langWalk(document.body,on?LANGDICT:LANGREV);var b=$("#langbtn");if(b){b.classList.toggle("on",on);b.textContent=on?"✓ 한글패치 ON":"✝ Korean Patch";b.title=on?"한글패치 끄기 (English)":"UI 한글패치 켜기";}localStorage.setItem("tos_lang",on?"ko":"en");}
+  function applyLang(on){langWalk(document.body,on?LANGDICT:LANGREV);applyCardLang(on);var b=$("#langbtn");if(b){b.classList.toggle("on",on);b.textContent=on?"✓ 한글패치 ON":"✝ Korean Patch";b.title=on?"한글패치 끄기 (English)":"UI 한글패치 켜기";}localStorage.setItem("tos_lang",on?"ko":"en");}
   $("#langbtn").addEventListener("click",function(){LANGON=!LANGON;applyLang(LANGON);});
+  applyCardLang(LANGON);             /* set descriptions to the right language on load (default = English) */
   if(LANGON)applyLang(true);
 
   /* deep-link: TempleOSGames.html#flapbat auto-launches that game (desktop GAMES window uses this) */
